@@ -243,10 +243,62 @@ async function getLeadMetrics() {
     };
 }
 
+/**
+ * Genera el contenido CSV de todos los leads para Excel/Google Sheets
+ */
+async function exportLeadsToCsv() {
+    const leads = await getAllLeads(1000, 0);
+    const headers = [
+        'ID',
+        'Fecha',
+        'Nombre Completo',
+        'Telefono',
+        'Email',
+        'Ciudad/Zona',
+        'Inmueble',
+        'Estado Obra',
+        'Servicio',
+        'Area m2',
+        'Presupuesto Estimado (COP)',
+        'Estado CRM',
+        'Origen',
+        'Campana UTM',
+        'Detalles'
+    ];
+
+    const escapeCsv = (str) => {
+        if (str === null || str === undefined) return '""';
+        const stringified = String(str).replace(/"/g, '""');
+        return `"${stringified}"`;
+    };
+
+    const rows = leads.map(l => [
+        l.id,
+        new Date(l.created_at).toLocaleString('es-CO'),
+        escapeCsv(l.nombre_completo),
+        escapeCsv(l.telefono),
+        escapeCsv(l.email || ''),
+        escapeCsv(l.ciudad_zona),
+        escapeCsv(l.tipo_inmueble),
+        escapeCsv(l.estado_actual_obra),
+        escapeCsv(l.tipo_servicio),
+        l.area_m2_estimada || 0,
+        l.presupuesto_estimado || 0,
+        escapeCsv(l.estado_lead),
+        escapeCsv(l.origen_lead),
+        escapeCsv(l.utm_campaign || l.utm_source || 'Directo'),
+        escapeCsv(l.detalles_adicionales || '')
+    ].join(','));
+
+    // Incluir BOM UTF-8 (\uFEFF) para que Excel abra acentos y caracteres especiales automáticamente
+    return '\uFEFF' + [headers.join(','), ...rows].join('\r\n');
+}
+
 module.exports = {
     createLead,
     getAllLeads,
     updateLeadStatus,
     getLeadMetrics,
-    calcularPresupuestoEstimado
+    calcularPresupuestoEstimado,
+    exportLeadsToCsv
 };

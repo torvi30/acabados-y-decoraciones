@@ -9,6 +9,7 @@ router.post('/leads', leadController.submitLead);
 router.get('/leads/estimate', leadController.estimatePrice);
 
 // Rutas de administración y Mini-CRM
+router.get('/leads/export/csv', leadController.exportCsv);
 router.get('/leads', leadController.listLeads);
 router.get('/leads/metrics', leadController.getMetrics);
 router.patch('/leads/:id/status', leadController.changeStatus);

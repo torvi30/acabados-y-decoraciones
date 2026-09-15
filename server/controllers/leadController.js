@@ -243,10 +243,31 @@ async function estimatePrice(req, res) {
     }
 }
 
+/**
+ * Descarga de base de datos de clientes en formato CSV
+ */
+async function exportCsv(req, res) {
+    try {
+        const csvData = await leadService.exportLeadsToCsv();
+        const filename = `cotizaciones_obra_blanca_${new Date().toISOString().slice(0, 10)}.csv`;
+        
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        return res.status(200).send(csvData);
+    } catch (error) {
+        console.error('Error exportando CSV:', error);
+        return res.status(500).json({
+            success: false,
+            error: 'No se pudo generar el archivo CSV.'
+        });
+    }
+}
+
 module.exports = {
     submitLead,
     listLeads,
     changeStatus,
     getMetrics,
-    estimatePrice
+    estimatePrice,
+    exportCsv
 };

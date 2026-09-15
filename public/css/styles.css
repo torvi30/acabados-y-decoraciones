@@ -1174,6 +1174,31 @@ h1, h2, h3, h4 {
     font-weight: 700;
 }
 
+.crm-filter-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-glass);
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 5px 12px;
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.crm-filter-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+.crm-filter-btn.active {
+    background: var(--primary);
+    color: #0b0f19;
+    border-color: var(--primary-light);
+    box-shadow: 0 0 10px var(--primary-glow);
+}
+
 .crm-status-badge {
     display: inline-block;
     padding: 3px 8px;
@@ -1183,15 +1208,76 @@ h1, h2, h3, h4 {
 }
 
 .crm-status-nuevo {
-    background: rgba(245, 158, 11, 0.2);
+    background: rgba(245, 158, 11, 0.15);
     color: var(--primary-light);
     border: 1px solid var(--primary);
 }
 
 .crm-status-contactado {
-    background: rgba(56, 189, 248, 0.2);
+    background: rgba(56, 189, 248, 0.15);
     color: var(--accent);
     border: 1px solid var(--accent);
+}
+
+.crm-status-visita_tecnica_agendada {
+    background: rgba(168, 85, 247, 0.15);
+    color: #c084fc;
+    border: 1px solid #a855f7;
+}
+
+.crm-status-cotizacion_enviada {
+    background: rgba(234, 179, 8, 0.15);
+    color: #fde047;
+    border: 1px solid #eab308;
+}
+
+.crm-status-ganado_en_obra {
+    background: rgba(34, 197, 94, 0.2);
+    color: #4ade80;
+    border: 1px solid #22c55e;
+}
+
+.crm-status-perdido {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+    border: 1px solid #ef4444;
+}
+
+.crm-select-status {
+    background: #090d16;
+    color: #f1f5f9;
+    border: 1px solid var(--border-glass);
+    border-radius: var(--radius-sm);
+    padding: 4px 6px;
+    font-size: 0.78rem;
+    cursor: pointer;
+    outline: none;
+}
+
+.crm-btn-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-glass);
+    color: #fff;
+    text-decoration: none;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+}
+
+.crm-btn-action:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: scale(1.05);
+}
+
+.crm-btn-wa:hover {
+    background: #25d366;
+    color: #fff;
+    border-color: #25d366;
 }
 
 /* Footer */

@@ -10,7 +10,9 @@ document.addEventListener('DOMContentLoaded', () => {
         obra_blanca_completa: 185000,
         estuco_y_pintura: 48000,
         cielo_raso_drywall: 65000,
-        enchapes_y_pisos: 55000
+        enchapes_y_pisos: 55000,
+        cocinas_y_carpinteria: 95000,
+        iluminacion_y_domotica: 45000
     };
 
     // Estado local del embudo
@@ -79,6 +81,27 @@ document.addEventListener('DOMContentLoaded', () => {
     setupRadioCards('.option-card-inmueble', 'tipo_inmueble');
     setupRadioCards('.option-card-estado', 'estado_actual_obra');
     setupRadioCards('.option-card-servicio', 'tipo_servicio');
+
+    // Vinculación de botones "Cotizar este servicio" desde las tarjetas de servicios
+    const serviceCtaButtons = document.querySelectorAll('[data-service-select]');
+    serviceCtaButtons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const selectedService = btn.getAttribute('data-service-select');
+            if (selectedService) {
+                // Marcar radio button y card
+                const targetRadio = document.querySelector(`.option-card-servicio input[value="${selectedService}"]`);
+                if (targetRadio) {
+                    document.querySelectorAll('.option-card-servicio').forEach(c => c.classList.remove('selected'));
+                    const parentCard = targetRadio.closest('.option-card-servicio');
+                    if (parentCard) parentCard.classList.add('selected');
+                    targetRadio.checked = true;
+                    funnelState.tipo_servicio = selectedService;
+                    updateLiveEstimate();
+                }
+                goToStep(2);
+            }
+        });
+    });
 
     // Actualizador de estimación en tiempo real
     function updateLiveEstimate() {

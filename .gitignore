@@ -4,3 +4,6 @@ node_modules/
 *.log
 npm-debug.log*
 .system_generated/
+serviceAccountKey.json
+firebase-key*.json
+*credentials*.json

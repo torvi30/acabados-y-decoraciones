@@ -231,6 +231,33 @@ document.addEventListener('DOMContentLoaded', () => {
     // Posición inicial centrada al 50%
     setSliderPosition(50, false);
 
+    // Sincronización dinámica con la transformación destacada configurada en el Admin
+    async function loadFeaturedTransformation() {
+        try {
+            const res = await fetch('/api/projects/featured');
+            if (!res.ok) return;
+            const json = await res.json();
+            const project = (json && json.data) ? json.data : json;
+            if (project && project.foto_antes && project.foto_despues) {
+                const beforeImg = container.querySelector('.slider-before');
+                if (beforeImg) {
+                    beforeImg.src = project.foto_antes;
+                    beforeImg.alt = project.titulo ? `${project.titulo} - Obra Gris` : 'Obra Gris';
+                }
+                if (afterImg) {
+                    afterImg.src = project.foto_despues;
+                    afterImg.alt = project.titulo ? `${project.titulo} - Acabado Final` : 'Obra Blanca';
+                    afterImg.onload = syncImageWidth;
+                }
+                syncImageWidth();
+            }
+        } catch (e) {
+            console.debug('Usando imágenes predeterminadas del comparador:', e.message);
+        }
+    }
+
+    loadFeaturedTransformation();
+
     // Animación de bienvenida sutil al hacer scroll para invitar a la interacción
     let hasAnimated = false;
     const observer = new IntersectionObserver((entries) => {

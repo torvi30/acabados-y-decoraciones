@@ -1070,25 +1070,59 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 12. Switcher de Vista (Lista vs Tablero Kanban)
+    // 12. Switcher de Vista (Lista vs Tablero Kanban vs Proyectos Fotos)
     window.switchView = function(viewName) {
         currentView = viewName;
         const btnViewList = document.getElementById('btnViewList');
         const btnViewKanban = document.getElementById('btnViewKanban');
+        const btnViewProjects = document.getElementById('btnViewProjects');
+
         const crmListView = document.getElementById('crmListView');
         const crmKanbanSection = document.getElementById('crmKanbanSection');
+        const crmProjectsSection = document.getElementById('crmProjectsSection');
+
         const btnBottomNavList = document.getElementById('btnBottomNavList');
         const btnBottomNavKanban = document.getElementById('btnBottomNavKanban');
+        const btnBottomNavProjects = document.getElementById('btnBottomNavProjects');
+
         const navTabBtns = document.querySelectorAll('.nav-tab-btn');
+
+        // Reset all view buttons
+        [btnViewList, btnViewKanban, btnViewProjects].forEach(b => {
+            if (b) b.className = 'view-switch-btn px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition-all flex items-center gap-1.5';
+        });
+
+        // Hide all sections
+        if (crmListView) crmListView.classList.add('hidden');
+        if (crmKanbanSection) crmKanbanSection.classList.add('hidden');
+        if (crmProjectsSection) crmProjectsSection.classList.add('hidden');
+
+        // Reset bottom nav colors
+        if (btnBottomNavList) {
+            btnBottomNavList.className = 'flex flex-col items-center gap-1 text-[10px] font-bold text-slate-400 hover:text-brand-400 transition-colors';
+            const svg = btnBottomNavList.querySelector('svg');
+            if (svg) svg.className = 'w-5 h-5 text-slate-400';
+        }
+        if (btnBottomNavKanban) {
+            btnBottomNavKanban.className = 'flex flex-col items-center gap-1 text-[10px] font-bold text-slate-400 hover:text-purple-400 transition-colors';
+            const svg = btnBottomNavKanban.querySelector('svg');
+            if (svg) svg.className = 'w-5 h-5 text-slate-400';
+        }
+        if (btnBottomNavProjects) {
+            btnBottomNavProjects.className = 'flex flex-col items-center gap-1 text-[10px] font-bold text-slate-400 hover:text-amber-400 transition-colors';
+            const svg = btnBottomNavProjects.querySelector('svg');
+            if (svg) svg.className = 'w-5 h-5 text-slate-400';
+        }
+
+        // Reset desktop nav buttons
+        navTabBtns.forEach(b => {
+            b.className = 'nav-tab-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 transition-all flex items-center gap-2';
+        });
 
         if (viewName === 'kanban') {
             if (btnViewKanban) {
                 btnViewKanban.className = 'view-switch-btn active px-2.5 py-1 rounded-lg text-xs font-bold text-white bg-slate-800 shadow-sm flex items-center gap-1.5 transition-all';
             }
-            if (btnViewList) {
-                btnViewList.className = 'view-switch-btn px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition-all flex items-center gap-1.5';
-            }
-            if (crmListView) crmListView.classList.add('hidden');
             if (crmKanbanSection) crmKanbanSection.classList.remove('hidden');
 
             if (btnBottomNavKanban) {
@@ -1096,47 +1130,49 @@ document.addEventListener('DOMContentLoaded', () => {
                 const svg = btnBottomNavKanban.querySelector('svg');
                 if (svg) svg.className = 'w-5 h-5 text-purple-400';
             }
-            if (btnBottomNavList) {
-                btnBottomNavList.className = 'flex flex-col items-center gap-1 text-[10px] font-bold text-slate-400 hover:text-brand-400 transition-colors';
-                const svg = btnBottomNavList.querySelector('svg');
-                if (svg) svg.className = 'w-5 h-5 text-slate-400';
-            }
 
             navTabBtns.forEach(b => {
                 if (b.getAttribute('data-nav') === 'kanban') {
                     b.className = 'nav-tab-btn active px-3.5 py-1.5 rounded-xl text-xs font-semibold text-white bg-slate-800 border border-slate-700/80 transition-all flex items-center gap-2';
-                } else {
-                    b.className = 'nav-tab-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 transition-all flex items-center gap-2';
                 }
             });
 
             renderKanbanBoard(getFilteredKanbanLeads());
+        } else if (viewName === 'projects') {
+            if (btnViewProjects) {
+                btnViewProjects.className = 'view-switch-btn active px-2.5 py-1 rounded-lg text-xs font-bold text-white bg-slate-800 shadow-sm flex items-center gap-1.5 transition-all';
+            }
+            if (crmProjectsSection) crmProjectsSection.classList.remove('hidden');
+
+            if (btnBottomNavProjects) {
+                btnBottomNavProjects.className = 'flex flex-col items-center gap-1 text-[10px] font-bold text-amber-400 transition-colors';
+                const svg = btnBottomNavProjects.querySelector('svg');
+                if (svg) svg.className = 'w-5 h-5 text-amber-400';
+            }
+
+            navTabBtns.forEach(b => {
+                if (b.getAttribute('data-nav') === 'projects') {
+                    b.className = 'nav-tab-btn active px-3.5 py-1.5 rounded-xl text-xs font-semibold text-white bg-slate-800 border border-slate-700/80 transition-all flex items-center gap-2';
+                }
+            });
+
+            loadProjects();
         } else {
+            // viewName === 'list'
             if (btnViewList) {
                 btnViewList.className = 'view-switch-btn active px-2.5 py-1 rounded-lg text-xs font-bold text-white bg-slate-800 shadow-sm flex items-center gap-1.5 transition-all';
             }
-            if (btnViewKanban) {
-                btnViewKanban.className = 'view-switch-btn px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition-all flex items-center gap-1.5';
-            }
             if (crmListView) crmListView.classList.remove('hidden');
-            if (crmKanbanSection) crmKanbanSection.classList.add('hidden');
 
             if (btnBottomNavList) {
                 btnBottomNavList.className = 'flex flex-col items-center gap-1 text-[10px] font-bold text-brand-400 transition-colors';
                 const svg = btnBottomNavList.querySelector('svg');
                 if (svg) svg.className = 'w-5 h-5 text-brand-400';
             }
-            if (btnBottomNavKanban) {
-                btnBottomNavKanban.className = 'flex flex-col items-center gap-1 text-[10px] font-bold text-slate-400 hover:text-purple-400 transition-colors';
-                const svg = btnBottomNavKanban.querySelector('svg');
-                if (svg) svg.className = 'w-5 h-5 text-slate-400';
-            }
 
             navTabBtns.forEach(b => {
-                if (b.getAttribute('data-nav') === 'dashboard') {
+                if (b.getAttribute('data-nav') === 'dashboard' || b.getAttribute('data-nav') === 'leads') {
                     b.className = 'nav-tab-btn active px-3.5 py-1.5 rounded-xl text-xs font-semibold text-white bg-slate-800 border border-slate-700/80 transition-all flex items-center gap-2';
-                } else {
-                    b.className = 'nav-tab-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 transition-all flex items-center gap-2';
                 }
             });
 
@@ -1146,8 +1182,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const btnViewList = document.getElementById('btnViewList');
     const btnViewKanban = document.getElementById('btnViewKanban');
+    const btnViewProjects = document.getElementById('btnViewProjects');
     if (btnViewList) btnViewList.addEventListener('click', () => switchView('list'));
     if (btnViewKanban) btnViewKanban.addEventListener('click', () => switchView('kanban'));
+    if (btnViewProjects) btnViewProjects.addEventListener('click', () => switchView('projects'));
 
     // 13. Pestañas del Navbar
     const navTabBtns = document.querySelectorAll('.nav-tab-btn');
@@ -1159,9 +1197,501 @@ document.addEventListener('DOMContentLoaded', () => {
                 filterByState('all');
             } else if (nav === 'kanban') {
                 switchView('kanban');
+            } else if (nav === 'projects') {
+                switchView('projects');
             }
         });
     });
+
+    // =========================================================================
+    // 14. GESTOR DE TRANSFORMACIONES "ANTES Y DESPUÉS" (Subida y Edición de Fotos)
+    // =========================================================================
+    let allProjects = [];
+    let selectedFotoAntesFile = null;
+    let selectedFotoDespuesFile = null;
+
+    const projectsGrid = document.getElementById('projectsGrid');
+    const projectModal = document.getElementById('projectModal');
+    const btnOpenNewProjectModal = document.getElementById('btnOpenNewProjectModal');
+    const btnCloseProjectModal = document.getElementById('btnCloseProjectModal');
+    const btnCancelProjectModal = document.getElementById('btnCancelProjectModal');
+    const projectForm = document.getElementById('projectForm');
+    const projectModalTitle = document.getElementById('projectModalTitle');
+    const btnSubmitProject = document.getElementById('btnSubmitProject');
+    const btnSubmitProjectText = document.getElementById('btnSubmitProjectText');
+
+    // Dropzones y Previews
+    const dropzoneAntes = document.getElementById('dropzoneAntes');
+    const inputFotoAntes = document.getElementById('inputFotoAntes');
+    const imgPreviewAntes = document.getElementById('imgPreviewAntes');
+    const previewAntesContainer = document.getElementById('previewAntesContainer');
+    const placeholderAntes = document.getElementById('placeholderAntes');
+    const btnResetFotoAntes = document.getElementById('btnResetFotoAntes');
+
+    const dropzoneDespues = document.getElementById('dropzoneDespues');
+    const inputFotoDespues = document.getElementById('inputFotoDespues');
+    const imgPreviewDespues = document.getElementById('imgPreviewDespues');
+    const previewDespuesContainer = document.getElementById('previewDespuesContainer');
+    const placeholderDespues = document.getElementById('placeholderDespues');
+    const btnResetFotoDespues = document.getElementById('btnResetFotoDespues');
+
+    async function loadProjects() {
+        if (!projectsGrid) return;
+        projectsGrid.innerHTML = `
+            <div class="py-12 col-span-full text-center text-slate-400">
+                <div class="inline-flex items-center gap-2">
+                    <svg class="animate-spin h-5 w-5 text-brand-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span class="text-xs">Cargando proyectos desde Firebase...</span>
+                </div>
+            </div>
+        `;
+
+        try {
+            const res = await fetch('/api/projects?all=true');
+            const data = await res.json();
+            if (data.success && Array.isArray(data.data)) {
+                allProjects = data.data;
+                renderProjectsGrid(allProjects);
+            } else {
+                allProjects = [];
+                renderEmptyProjects();
+            }
+        } catch (error) {
+            console.error('Error al cargar proyectos:', error);
+            projectsGrid.innerHTML = `
+                <div class="py-12 col-span-full text-center text-rose-400 font-bold bg-dark-900 border border-slate-800 rounded-2xl">
+                    Error al cargar proyectos de transformación.
+                </div>
+            `;
+        }
+    }
+
+    function renderEmptyProjects() {
+        if (!projectsGrid) return;
+        projectsGrid.innerHTML = `
+            <div class="col-span-full py-16 px-4 text-center text-slate-400 bg-dark-900 border border-slate-800 rounded-2xl">
+                <div class="w-16 h-16 rounded-2xl bg-dark-950 border border-slate-800 flex items-center justify-center mx-auto text-3xl mb-3">
+                    📸
+                </div>
+                <h3 class="text-white text-base font-bold">Aún no has registrado transformaciones</h3>
+                <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+                    Sube tu primer proyecto con fotos de obra gris y obra blanca para que tus clientes lo vean en la página web.
+                </p>
+                <button type="button" onclick="openNewProjectModal()" class="mt-4 px-4 py-2 rounded-xl text-xs font-bold text-dark-950 bg-gradient-to-r from-brand-400 to-amber-500 hover:from-brand-300 hover:to-amber-400 transition-all shadow-md">
+                    + Subir Primera Transformación
+                </button>
+            </div>
+        `;
+    }
+
+    function renderProjectsGrid(projects) {
+        if (!projectsGrid) return;
+        if (!projects || projects.length === 0) {
+            renderEmptyProjects();
+            return;
+        }
+
+        projectsGrid.innerHTML = projects.map(proj => {
+            const isFeatured = proj.destacado_principal === true;
+            const fecha = new Date(proj.created_at || Date.now()).toLocaleDateString('es-CO', {
+                day: '2-digit', month: 'short', year: 'numeric'
+            });
+
+            return `
+                <div class="bg-dark-900 border ${isFeatured ? 'border-amber-500/60 ring-1 ring-amber-500/40 shadow-amber-500/10' : 'border-slate-800 hover:border-slate-700/80'} rounded-2xl overflow-hidden shadow-xl flex flex-col transition-all group">
+                    
+                    <!-- Previsualizador Visual Dual (Antes vs Después) -->
+                    <div class="relative h-48 sm:h-52 bg-dark-950 overflow-hidden grid grid-cols-2 divide-x divide-slate-800">
+                        <!-- Foto Antes -->
+                        <div class="relative h-full overflow-hidden group/antes">
+                            <img src="${proj.foto_antes}" alt="Foto Antes - ${proj.titulo}" class="w-full h-full object-cover group-hover/antes:scale-105 transition-transform duration-300">
+                            <span class="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-dark-950/85 backdrop-blur-sm text-[10px] font-bold text-amber-400 border border-amber-500/30">
+                                🧱 Antes
+                            </span>
+                        </div>
+
+                        <!-- Foto Después -->
+                        <div class="relative h-full overflow-hidden group/despues">
+                            <img src="${proj.foto_despues}" alt="Foto Después - ${proj.titulo}" class="w-full h-full object-cover group-hover/despues:scale-105 transition-transform duration-300">
+                            <span class="absolute top-2 right-2 px-2 py-0.5 rounded-md bg-dark-950/85 backdrop-blur-sm text-[10px] font-bold text-emerald-400 border border-emerald-500/30">
+                                ✨ Después
+                            </span>
+                        </div>
+
+                        <!-- Badge Destacado en Home -->
+                        ${isFeatured ? `
+                            <div class="absolute bottom-2 inset-x-2 text-center">
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-amber-500 to-brand-500 text-dark-950 text-[10px] font-extrabold shadow-lg shadow-amber-500/30 uppercase tracking-wider">
+                                    <span>🌟</span> Activo en Comparador Web
+                                </span>
+                            </div>
+                        ` : ''}
+                    </div>
+
+                    <!-- Datos del Proyecto -->
+                    <div class="p-4 sm:p-5 flex-1 flex flex-col justify-between space-y-3">
+                        <div class="space-y-1.5">
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 text-[10px] font-bold uppercase tracking-wider">
+                                    ${proj.categoria || 'Obra Blanca'}
+                                </span>
+                                <span class="text-[10px] text-slate-500 font-mono">${fecha}</span>
+                            </div>
+                            <h3 class="text-sm font-bold text-white leading-snug group-hover:text-amber-400 transition-colors">
+                                ${proj.titulo}
+                            </h3>
+                            <p class="text-xs text-slate-400 flex items-center gap-1">
+                                <svg class="w-3.5 h-3.5 text-rose-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                                <span>${proj.sector || 'Medellín / Área Metropolitana'}</span>
+                            </p>
+                            ${proj.descripcion ? `
+                                <p class="text-xs text-slate-400/90 line-clamp-2 pt-1 leading-relaxed">
+                                    ${proj.descripcion}
+                                </p>
+                            ` : ''}
+                        </div>
+
+                        <!-- Botones de Acción -->
+                        <div class="pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2">
+                            <!-- Botón Destacar en Home -->
+                            ${isFeatured ? `
+                                <span class="text-[11px] font-bold text-amber-400 flex items-center gap-1">
+                                    <svg class="w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                    </svg>
+                                    Slider Activo
+                                </span>
+                            ` : `
+                                <button type="button" onclick="setFeaturedProject('${proj.id}')" 
+                                        class="px-2.5 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500 text-amber-400 hover:text-dark-950 border border-amber-500/25 text-xs font-bold transition-all flex items-center gap-1 active:scale-95">
+                                    <span>🌟</span>
+                                    <span>Destacar en Web</span>
+                                </button>
+                            `}
+
+                            <div class="flex items-center gap-1.5">
+                                <!-- Botón Editar -->
+                                <button type="button" onclick="openEditProjectModal('${proj.id}')" 
+                                        class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition-all text-xs" title="Editar proyecto">
+                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    </svg>
+                                </button>
+
+                                <!-- Botón Eliminar -->
+                                <button type="button" onclick="deleteProject('${proj.id}', '${encodeURIComponent(proj.titulo)}')" 
+                                        class="p-2 rounded-xl text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/30 transition-all text-xs" title="Eliminar proyecto">
+                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // Abrir Modal para Crear
+    window.openNewProjectModal = function() {
+        if (!projectForm) return;
+        projectForm.reset();
+        document.getElementById('projectId').value = '';
+        document.getElementById('projectExistingFotoAntes').value = '';
+        document.getElementById('projectExistingFotoDespues').value = '';
+        selectedFotoAntesFile = null;
+        selectedFotoDespuesFile = null;
+
+        // Reset previews
+        if (previewAntesContainer) previewAntesContainer.classList.add('hidden');
+        if (placeholderAntes) placeholderAntes.classList.remove('hidden');
+        if (btnResetFotoAntes) btnResetFotoAntes.classList.add('hidden');
+        if (imgPreviewAntes) imgPreviewAntes.src = '';
+
+        if (previewDespuesContainer) previewDespuesContainer.classList.add('hidden');
+        if (placeholderDespues) placeholderDespues.classList.remove('hidden');
+        if (btnResetFotoDespues) btnResetFotoDespues.classList.add('hidden');
+        if (imgPreviewDespues) imgPreviewDespues.src = '';
+
+        if (projectModalTitle) projectModalTitle.textContent = 'Nueva Transformación';
+        if (btnSubmitProjectText) btnSubmitProjectText.textContent = 'Guardar Transformación';
+
+        if (projectModal) projectModal.classList.add('modal-active');
+    };
+
+    // Abrir Modal para Editar
+    window.openEditProjectModal = function(id) {
+        const proj = allProjects.find(p => String(p.id) === String(id));
+        if (!proj) return;
+
+        openNewProjectModal();
+        if (projectModalTitle) projectModalTitle.textContent = 'Editar Transformación';
+        if (btnSubmitProjectText) btnSubmitProjectText.textContent = 'Actualizar Cambios';
+
+        document.getElementById('projectId').value = proj.id;
+        document.getElementById('projectTitulo').value = proj.titulo || '';
+        document.getElementById('projectCategoria').value = proj.categoria || 'Apartamento Completo';
+        document.getElementById('projectSector').value = proj.sector || '';
+        document.getElementById('projectDescripcion').value = proj.descripcion || '';
+        document.getElementById('projectDestacado').checked = proj.destacado_principal === true;
+
+        document.getElementById('projectExistingFotoAntes').value = proj.foto_antes || '';
+        document.getElementById('projectExistingFotoDespues').value = proj.foto_despues || '';
+
+        // Cargar vista previa existente de foto Antes
+        if (proj.foto_antes) {
+            imgPreviewAntes.src = proj.foto_antes;
+            previewAntesContainer.classList.remove('hidden');
+            placeholderAntes.classList.add('hidden');
+            btnResetFotoAntes.classList.remove('hidden');
+        }
+
+        // Cargar vista previa existente de foto Después
+        if (proj.foto_despues) {
+            imgPreviewDespues.src = proj.foto_despues;
+            previewDespuesContainer.classList.remove('hidden');
+            placeholderDespues.classList.add('hidden');
+            btnResetFotoDespues.classList.remove('hidden');
+        }
+
+        if (projectModal) projectModal.classList.add('modal-active');
+    };
+
+    function closeProjectModal() {
+        if (projectModal) projectModal.classList.remove('modal-active');
+    }
+
+    if (btnOpenNewProjectModal) btnOpenNewProjectModal.addEventListener('click', openNewProjectModal);
+    if (btnCloseProjectModal) btnCloseProjectModal.addEventListener('click', closeProjectModal);
+    if (btnCancelProjectModal) btnCancelProjectModal.addEventListener('click', closeProjectModal);
+
+    // Manejo de Dropzone y Archivos para Foto ANTES
+    if (dropzoneAntes && inputFotoAntes) {
+        dropzoneAntes.addEventListener('click', () => inputFotoAntes.click());
+
+        inputFotoAntes.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) handleFotoAntesSelected(file);
+        });
+
+        dropzoneAntes.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropzoneAntes.classList.add('drag-active');
+        });
+
+        dropzoneAntes.addEventListener('dragleave', () => {
+            dropzoneAntes.classList.remove('drag-active');
+        });
+
+        dropzoneAntes.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropzoneAntes.classList.remove('drag-active');
+            const file = e.dataTransfer.files[0];
+            if (file) handleFotoAntesSelected(file);
+        });
+    }
+
+    function handleFotoAntesSelected(file) {
+        selectedFotoAntesFile = file;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            imgPreviewAntes.src = e.target.result;
+            previewAntesContainer.classList.remove('hidden');
+            placeholderAntes.classList.add('hidden');
+            btnResetFotoAntes.classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+    }
+
+    if (btnResetFotoAntes) {
+        btnResetFotoAntes.addEventListener('click', (e) => {
+            e.stopPropagation();
+            selectedFotoAntesFile = null;
+            document.getElementById('projectExistingFotoAntes').value = '';
+            inputFotoAntes.value = '';
+            imgPreviewAntes.src = '';
+            previewAntesContainer.classList.add('hidden');
+            placeholderAntes.classList.remove('hidden');
+            btnResetFotoAntes.classList.add('hidden');
+        });
+    }
+
+    // Manejo de Dropzone y Archivos para Foto DESPUÉS
+    if (dropzoneDespues && inputFotoDespues) {
+        dropzoneDespues.addEventListener('click', () => inputFotoDespues.click());
+
+        inputFotoDespues.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) handleFotoDespuesSelected(file);
+        });
+
+        dropzoneDespues.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropzoneDespues.classList.add('drag-active');
+        });
+
+        dropzoneDespues.addEventListener('dragleave', () => {
+            dropzoneDespues.classList.remove('drag-active');
+        });
+
+        dropzoneDespues.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropzoneDespues.classList.remove('drag-active');
+            const file = e.dataTransfer.files[0];
+            if (file) handleFotoDespuesSelected(file);
+        });
+    }
+
+    function handleFotoDespuesSelected(file) {
+        selectedFotoDespuesFile = file;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            imgPreviewDespues.src = e.target.result;
+            previewDespuesContainer.classList.remove('hidden');
+            placeholderDespues.classList.add('hidden');
+            btnResetFotoDespues.classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+    }
+
+    if (btnResetFotoDespues) {
+        btnResetFotoDespues.addEventListener('click', (e) => {
+            e.stopPropagation();
+            selectedFotoDespuesFile = null;
+            document.getElementById('projectExistingFotoDespues').value = '';
+            inputFotoDespues.value = '';
+            imgPreviewDespues.src = '';
+            previewDespuesContainer.classList.add('hidden');
+            placeholderDespues.classList.remove('hidden');
+            btnResetFotoDespues.classList.add('hidden');
+        });
+    }
+
+    // Guardar / Actualizar Proyecto
+    if (projectForm) {
+        projectForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('projectId').value;
+            const isEditing = Boolean(id);
+
+            const existingAntes = document.getElementById('projectExistingFotoAntes').value;
+            const existingDespues = document.getElementById('projectExistingFotoDespues').value;
+
+            if (!selectedFotoAntesFile && !existingAntes) {
+                showToast('Debes seleccionar la foto del ANTES (Obra Gris)', '⚠️', true);
+                return;
+            }
+
+            if (!selectedFotoDespuesFile && !existingDespues) {
+                showToast('Debes seleccionar la foto del DESPUÉS (Acabado Final)', '⚠️', true);
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('titulo', document.getElementById('projectTitulo').value.trim());
+            formData.append('categoria', document.getElementById('projectCategoria').value);
+            formData.append('sector', document.getElementById('projectSector').value.trim());
+            formData.append('descripcion', document.getElementById('projectDescripcion').value.trim());
+            formData.append('destacado_principal', document.getElementById('projectDestacado').checked);
+
+            if (selectedFotoAntesFile) {
+                formData.append('foto_antes', selectedFotoAntesFile);
+            } else if (existingAntes) {
+                formData.append('foto_antes', existingAntes);
+            }
+
+            if (selectedFotoDespuesFile) {
+                formData.append('foto_despues', selectedFotoDespuesFile);
+            } else if (existingDespues) {
+                formData.append('foto_despues', existingDespues);
+            }
+
+            try {
+                btnSubmitProject.disabled = true;
+                btnSubmitProject.innerHTML = `
+                    <svg class="animate-spin h-4 w-4 text-dark-950" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>Subiendo y guardando...</span>
+                `;
+
+                const url = isEditing ? `/api/projects/${id}` : '/api/projects';
+                const method = isEditing ? 'PUT' : 'POST';
+
+                const res = await fetch(url, {
+                    method,
+                    body: formData
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    showToast(isEditing ? '¡Transformación actualizada!' : '¡Transformación subida con éxito!');
+                    closeProjectModal();
+                    await loadProjects();
+                } else {
+                    showToast(`Error: ${data.error || 'No se pudo guardar'}`, '⚠️', true);
+                }
+            } catch (err) {
+                console.error('Error al guardar proyecto:', err);
+                showToast('Error de conexión al guardar', '⚠️', true);
+            } finally {
+                btnSubmitProject.disabled = false;
+                btnSubmitProject.innerHTML = `
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span>${isEditing ? 'Actualizar Cambios' : 'Guardar Transformación'}</span>
+                `;
+            }
+        });
+    }
+
+    // Destacar en Home
+    window.setFeaturedProject = async function(id) {
+        try {
+            const res = await fetch(`/api/projects/${id}/featured`, { method: 'PATCH' });
+            const data = await res.json();
+            if (data.success) {
+                showToast('¡Obra marcada como destacada en el comparador web!', '🌟');
+                await loadProjects();
+            } else {
+                showToast(`Error: ${data.error}`, '⚠️', true);
+            }
+        } catch (err) {
+            console.error('Error al destacar proyecto:', err);
+            showToast('Error de conexión', '⚠️', true);
+        }
+    };
+
+    // Eliminar Proyecto
+    window.deleteProject = async function(id, titleEncoded) {
+        const title = decodeURIComponent(titleEncoded);
+        const confirmDelete = confirm(`¿Estás seguro de eliminar la transformación "${title}"? Se borrará de la web y de Firebase.`);
+        if (!confirmDelete) return;
+
+        try {
+            const res = await fetch(`/api/projects/${id}`, { method: 'DELETE' });
+            const data = await res.json();
+            if (data.success) {
+                showToast('Proyecto eliminado correctamente', '🗑️');
+                await loadProjects();
+            } else {
+                showToast(`Error: ${data.error}`, '⚠️', true);
+            }
+        } catch (err) {
+            console.error('Error al eliminar proyecto:', err);
+            showToast('Error de conexión', '⚠️', true);
+        }
+    };
 
     // Cierre de sesión
     const btnLogout = document.getElementById('btnLogout');
@@ -1180,6 +1710,7 @@ document.addEventListener('DOMContentLoaded', () => {
         btnRefresh.addEventListener('click', () => {
             loadLeads();
             checkBackendHealth();
+            if (currentView === 'projects') loadProjects();
             showToast('Datos sincronizados con Firebase');
         });
     }
@@ -1188,12 +1719,14 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('click', (e) => {
         if (e.target === detailModal) closeDetailModal();
         if (e.target === newLeadModal) closeNewLeadModal();
+        if (e.target === projectModal) closeProjectModal();
     });
 
     window.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             closeDetailModal();
             closeNewLeadModal();
+            closeProjectModal();
         }
     });
 
@@ -1201,3 +1734,4 @@ document.addEventListener('DOMContentLoaded', () => {
     checkBackendHealth();
     loadLeads();
 });
+

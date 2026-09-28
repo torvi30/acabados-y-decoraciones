@@ -118,13 +118,25 @@ async function runTests() {
             console.log(`   Status: ${authList.status} | Total leads en CRM:`, authList.body.count);
             if (authList.status !== 200 || !Array.isArray(authList.body.data)) throw new Error('Consulta de leads autorizada falló');
 
-            // 9. Prueba de Logout
-            console.log('\n9️⃣ Probando POST /api/auth/logout...');
+            // 9. Prueba de Proyectos - Obtener Comparador Destacado (Público)
+            console.log('\n9️⃣ Probando GET /api/projects/featured (Comparador público)...');
+            const featuredProj = await request('GET', '/api/projects/featured');
+            console.log(`   Status: ${featuredProj.status} | Obra destacada:`, featuredProj.body.data?.titulo);
+            if (featuredProj.status !== 200 || !featuredProj.body.data?.foto_antes) throw new Error('Obtención de proyecto destacado falló');
+
+            // 10. Prueba de Proyectos - Listado Total para el Administrador
+            console.log('\n🔟 Probando GET /api/projects?all=true...');
+            const allProjects = await request('GET', '/api/projects?all=true');
+            console.log(`   Status: ${allProjects.status} | Total transformaciones:`, allProjects.body.count);
+            if (allProjects.status !== 200 || !Array.isArray(allProjects.body.data)) throw new Error('Listado de proyectos falló');
+
+            // 11. Prueba de Logout
+            console.log('\n1️⃣1️⃣ Probando POST /api/auth/logout...');
             const logout = await request('POST', '/api/auth/logout');
             console.log(`   Status: ${logout.status} | Mensaje:`, logout.body.message);
             if (logout.status !== 200) throw new Error('Logout falló');
 
-            console.log('\n✅ ¡TODAS LAS PRUEBAS DE SEGURIDAD Y ENDPOINTS PASARON AL 100%!\n');
+            console.log('\n✅ ¡TODAS LAS PRUEBAS DE SEGURIDAD, CRM Y PROYECTOS PASARON AL 100%!\n');
         } catch (error) {
             console.error('\n❌ Error durante las pruebas:', error.message);
             process.exitCode = 1;

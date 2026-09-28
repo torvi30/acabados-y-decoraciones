@@ -10,6 +10,7 @@ const { testConnection, isDbConnected } = require('./config/db');
 const { isFirebaseConnected } = require('./config/firebase');
 const leadRoutes = require('./routes/leadRoutes');
 const authRoutes = require('./routes/authRoutes');
+const projectRoutes = require('./routes/projectRoutes');
 const { requireAdminAuthWeb } = require('./middlewares/authMiddleware');
 
 const app = express();
@@ -36,6 +37,7 @@ app.use(express.static(path.join(__dirname, '../public')));
 // Rutas de la API
 app.use('/api/auth', authRoutes);
 app.use('/api', leadRoutes);
+app.use('/api', projectRoutes);
 
 // Endpoint de Salud / Diagnóstico del Backend
 app.get('/api/health', (req, res) => {

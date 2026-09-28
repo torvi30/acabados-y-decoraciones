@@ -11,6 +11,18 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentFilter = 'all';
     let searchQuery = '';
     let selectedLeadForNotes = null;
+    let currentView = 'list';
+    let draggedLeadId = null;
+
+    // Etapas del Tablero Kanban (Pipeline de Obras)
+    const KANBAN_STAGES = [
+        { key: 'nuevo', label: 'Nuevos Leads', color: 'amber', prev: null, next: 'contactado' },
+        { key: 'contactado', label: 'Contactados', color: 'sky', prev: 'nuevo', next: 'visita_tecnica_agendada' },
+        { key: 'visita_tecnica_agendada', label: 'Visitas Agendadas', color: 'purple', prev: 'contactado', next: 'cotizacion_enviada' },
+        { key: 'cotizacion_enviada', label: 'Cotización Enviada', color: 'indigo', prev: 'visita_tecnica_agendada', next: 'ganado_en_obra' },
+        { key: 'ganado_en_obra', label: 'Obras Ganadas', color: 'emerald', prev: 'cotizacion_enviada', next: 'perdido' },
+        { key: 'perdido', label: 'Perdidos', color: 'rose', prev: 'ganado_en_obra', next: 'nuevo' }
+    ];
 
     // Elementos DOM
     const crmTableBody = document.getElementById('crmTableBody');
@@ -246,13 +258,28 @@ document.addEventListener('DOMContentLoaded', () => {
         if (elPerdido) elPerdido.textContent = counts.perdido;
     }
 
+    // Helper para filtrar prospectos por búsqueda en el Tablero Kanban
+    function getFilteredKanbanLeads() {
+        if (!searchQuery) return allLeads;
+        const q = searchQuery.toLowerCase();
+        return allLeads.filter(l => {
+            const nombre = (l.nombre_completo || '').toLowerCase();
+            const tel = (l.telefono || '').toLowerCase();
+            const zona = (l.ciudad_zona || '').toLowerCase();
+            const serv = (l.tipo_servicio || '').toLowerCase();
+            const notas = (l.notas_seguimiento || '').toLowerCase();
+            const detalles = (l.detalles_adicionales || '').toLowerCase();
+            return nombre.includes(q) || tel.includes(q) || zona.includes(q) || serv.includes(q) || notas.includes(q) || detalles.includes(q);
+        });
+    }
+
     // 5. Filtrado y Renderizado
     function filterAndRender() {
         let filtered = allLeads;
 
-        // Filtro por Estado
+        // Filtro por Estado (aplica a la vista de lista/tabla)
         if (currentFilter !== 'all') {
-            filtered = filtered.filter(l => l.estado_lead === currentFilter);
+            filtered = filtered.filter(l => (l.estado_lead || 'nuevo') === currentFilter);
         }
 
         // Filtro por Buscador
@@ -275,11 +302,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!filtered || filtered.length === 0) {
             renderEmpty();
-            return;
+        } else {
+            renderMobileCards(filtered);
+            renderDesktopTable(filtered);
         }
 
-        renderMobileCards(filtered);
-        renderDesktopTable(filtered);
+        // Mantener sincronizado y renderizado el Tablero Kanban
+        renderKanbanBoard(getFilteredKanbanLeads());
     }
 
     function renderEmpty() {
@@ -587,35 +616,240 @@ document.addEventListener('DOMContentLoaded', () => {
         }).join('');
     }
 
-    // 6. Cambio de Estado en Vivo (Sincronizado con Firebase Firestore)
-    window.changeStatus = async function(id, newStatus, selectElement) {
+    // 5C. Renderizado del Tablero Kanban (Pipeline por Etapas)
+    function renderKanbanBoard(leads) {
+        KANBAN_STAGES.forEach(st => {
+            const colLeads = leads.filter(l => (l.estado_lead || 'nuevo') === st.key);
+            const colTotalCOP = colLeads.reduce((acc, curr) => acc + (parseFloat(curr.presupuesto_estimado) || 0), 0);
+
+            const countEl = document.getElementById(`kbCount-${st.key}`);
+            const totalEl = document.getElementById(`kbTotal-${st.key}`);
+            const dropEl = document.getElementById(`kbDrop-${st.key}`);
+
+            if (countEl) countEl.textContent = colLeads.length;
+            if (totalEl) totalEl.textContent = `$${colTotalCOP.toLocaleString('es-CO')} COP`;
+
+            if (!dropEl) return;
+
+            if (colLeads.length === 0) {
+                dropEl.innerHTML = `
+                    <div class="h-32 border-2 border-dashed border-slate-800/80 rounded-xl flex flex-col items-center justify-center text-slate-500 text-xs text-center p-3 select-none pointer-events-none">
+                        <span class="text-xl opacity-30">📥</span>
+                        <span class="mt-1 font-medium text-[11px]">Arrastra aquí una obra</span>
+                    </div>
+                `;
+                return;
+            }
+
+            dropEl.innerHTML = colLeads.map(lead => {
+                const fecha = new Date(lead.created_at).toLocaleDateString('es-CO', {
+                    day: '2-digit', month: 'short'
+                });
+                const presupuesto = lead.presupuesto_estimado 
+                    ? `$${Number(lead.presupuesto_estimado).toLocaleString('es-CO')} COP` 
+                    : 'A convenir';
+
+                const cleanPhone = (lead.telefono || '').replace(/\D/g, '');
+                const waMsg = `Hola ${encodeURIComponent(lead.nombre_completo)}, te escribo de Obra Blanca para revisar los acabados de tu proyecto en ${encodeURIComponent(lead.ciudad_zona || 'Medellín')}`;
+                const waLink = `https://wa.me/57${cleanPhone}?text=${waMsg}`;
+                const telLink = `tel:+57${cleanPhone}`;
+                const serviceName = (lead.tipo_servicio || 'obra_blanca_completa').replace(/_/g, ' ');
+
+                const prevBtnHtml = st.prev ? `
+                    <button type="button" onclick="moveLeadStage('${lead.id}', '${st.prev}')" 
+                            class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition-all text-xs font-bold active:scale-95" 
+                            title="Mover a etapa anterior">
+                        ←
+                    </button>
+                ` : '<span class="w-6"></span>';
+
+                const nextBtnHtml = st.next ? `
+                    <button type="button" onclick="moveLeadStage('${lead.id}', '${st.next}')" 
+                            class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition-all text-xs font-bold active:scale-95" 
+                            title="Avanzar etapa">
+                        →
+                    </button>
+                ` : '<span class="w-6"></span>';
+
+                return `
+                    <div class="kanban-card group bg-dark-950/90 hover:bg-dark-950 border border-slate-800 hover:border-slate-700/80 rounded-xl p-3 shadow-md space-y-2.5 cursor-grab active:cursor-grabbing select-none"
+                         draggable="true" 
+                         data-id="${lead.id}" 
+                         data-status="${st.key}">
+                        
+                        <!-- Fila 1: Grip + Cliente + Fecha -->
+                        <div class="flex items-center justify-between gap-1.5">
+                            <div class="flex items-center gap-1.5 min-w-0">
+                                <span class="text-slate-600 group-hover:text-amber-400 transition-colors cursor-grab text-xs font-bold">⋮⋮</span>
+                                <h4 class="text-xs font-bold text-white truncate max-w-[170px]" title="${lead.nombre_completo}">
+                                    ${lead.nombre_completo}
+                                </h4>
+                            </div>
+                            <span class="text-[10px] text-slate-500 font-mono shrink-0">${fecha}</span>
+                        </div>
+
+                        <!-- Fila 2: Servicio & Ubicación -->
+                        <div class="space-y-0.5">
+                            <span class="text-[11px] font-semibold text-slate-300 block capitalize truncate">
+                                ${serviceName}
+                            </span>
+                            <span class="text-[10px] text-slate-400 flex items-center gap-1 truncate">
+                                <svg class="w-3 h-3 text-rose-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                                ${lead.ciudad_zona || 'Medellín'}
+                            </span>
+                        </div>
+
+                        <!-- Fila 3: Metraje & Presupuesto -->
+                        <div class="flex items-center justify-between gap-2 pt-1 border-t border-slate-800/60">
+                            <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-mono font-bold text-amber-400 bg-amber-500/10 border border-amber-500/25 whitespace-nowrap">
+                                <svg class="w-3 h-3 text-amber-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                                </svg>
+                                <span>${Number(lead.area_m2_estimada || 0).toLocaleString('es-CO')} m²</span>
+                            </span>
+                            <span class="text-xs font-black font-display text-brand-400 truncate">${presupuesto}</span>
+                        </div>
+
+                        <!-- Fila 4: Acciones Rápidas (WA, Llamar, Ficha) + Botones de Movimiento ← / → -->
+                        <div class="flex items-center justify-between gap-1 pt-1 border-t border-slate-800/60">
+                            <!-- Flecha retroceder -->
+                            ${prevBtnHtml}
+
+                            <!-- Acciones directas -->
+                            <div class="flex items-center gap-1">
+                                <a href="${waLink}" target="_blank" class="p-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500 text-emerald-400 hover:text-white border border-emerald-500/30 transition-all text-xs" title="WhatsApp">
+                                    <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.299.144.35.49 1.199.533 1.287.043.088.072.19.014.305-.058.115-.087.187-.173.289l-.26.309c-.087.098-.179.204-.077.379.101.175.452.746.97 1.208.667.595 1.23.78 1.403.867.174.088.275.073.376-.044.101-.116.433-.506.549-.68.116-.174.231-.145.39-.087s1.011.477 1.184.564.289.13.332.203c.043.072.043.419-.101.824z" />
+                                    </svg>
+                                </a>
+                                <a href="${telLink}" class="p-1.5 rounded-lg bg-sky-500/15 hover:bg-sky-500 text-sky-400 hover:text-white border border-sky-500/30 transition-all text-xs" title="Llamar">
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                                    </svg>
+                                </a>
+                                <button type="button" onclick="openDetailModal('${lead.id}')" class="p-1.5 rounded-lg bg-purple-500/15 hover:bg-purple-500 text-purple-400 hover:text-white border border-purple-500/30 transition-all text-xs" title="Ficha / Bitácora">
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    </svg>
+                                </button>
+                            </div>
+
+                            <!-- Flecha avanzar -->
+                            ${nextBtnHtml}
+                        </div>
+
+                    </div>
+                `;
+            }).join('');
+        });
+
+        initKanbanDragAndDrop();
+    }
+
+    // 5D. Manejo de Arrastrar y Soltar (HTML5 Drag & Drop)
+    function initKanbanDragAndDrop() {
+        const cards = document.querySelectorAll('.kanban-card');
+        const dropzones = document.querySelectorAll('.kanban-dropzone');
+
+        cards.forEach(card => {
+            card.addEventListener('dragstart', (e) => {
+                if (e.target.closest('button') || e.target.closest('a') || e.target.closest('select')) {
+                    e.preventDefault();
+                    return;
+                }
+                draggedLeadId = card.getAttribute('data-id');
+                e.dataTransfer.setData('text/plain', draggedLeadId);
+                e.dataTransfer.effectAllowed = 'move';
+                setTimeout(() => card.classList.add('is-dragging'), 0);
+            });
+
+            card.addEventListener('dragend', () => {
+                card.classList.remove('is-dragging');
+                draggedLeadId = null;
+                dropzones.forEach(dz => dz.classList.remove('drag-over'));
+            });
+        });
+
+        dropzones.forEach(dz => {
+            dz.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                if (!dz.classList.contains('drag-over')) {
+                    dz.classList.add('drag-over');
+                }
+            });
+
+            dz.addEventListener('dragleave', (e) => {
+                if (!dz.contains(e.relatedTarget)) {
+                    dz.classList.remove('drag-over');
+                }
+            });
+
+            dz.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dz.classList.remove('drag-over');
+                const leadId = e.dataTransfer.getData('text/plain') || draggedLeadId;
+                const targetStatus = dz.getAttribute('data-drop-status');
+
+                if (leadId && targetStatus) {
+                    moveLeadStage(leadId, targetStatus);
+                }
+            });
+        });
+    }
+
+    // 5E. Mover Etapa de Lead (Optimista + Sincronización en vivo con Firebase Firestore)
+    window.moveLeadStage = async function(leadId, targetStatus) {
+        const lead = allLeads.find(l => String(l.id) === String(leadId));
+        if (!lead) return;
+        if (lead.estado_lead === targetStatus) return;
+
+        const oldStatus = lead.estado_lead || 'nuevo';
+        lead.estado_lead = targetStatus;
+
+        // Actualización optimista de la interfaz
+        updateKPIs(allLeads);
+        updateTabCounters(allLeads);
+        filterAndRender();
+
+        const stageObj = KANBAN_STAGES.find(s => s.key === targetStatus);
+        const stageLabel = stageObj ? stageObj.label : targetStatus.replace(/_/g, ' ');
+        showToast(`Movido a: ${stageLabel}`);
+
         try {
-            const res = await fetch(`/api/leads/${id}/status`, {
+            const res = await fetch(`/api/leads/${leadId}/status`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ estado_lead: newStatus })
+                body: JSON.stringify({ estado_lead: targetStatus })
             });
             const data = await res.json();
-
-            if (data.success) {
-                const item = allLeads.find(l => String(l.id) === String(id));
-                if (item) item.estado_lead = newStatus;
-
-                selectElement.className = selectElement.className.replace(/st-\w+/, `st-${newStatus}`);
+            if (!data.success) {
+                // Revertir estado si falla en Firestore
+                lead.estado_lead = oldStatus;
                 updateKPIs(allLeads);
                 updateTabCounters(allLeads);
-                showToast(`Estado actualizado: ${newStatus.replace(/_/g, ' ')}`);
-                // Re-filtrar si hay un filtro activo que no sea 'all'
-                if (currentFilter !== 'all') {
-                    filterAndRender();
-                }
-            } else {
+                filterAndRender();
                 showToast(`Error: ${data.error || 'No se pudo actualizar'}`, '⚠️', true);
             }
         } catch (err) {
             console.error('Error al actualizar estado:', err);
-            showToast('Error de conexión al actualizar estado', '⚠️', true);
+            lead.estado_lead = oldStatus;
+            updateKPIs(allLeads);
+            updateTabCounters(allLeads);
+            filterAndRender();
+            showToast('Error de conexión con Firebase', '⚠️', true);
         }
+    };
+
+    // 6. Cambio de Estado en Vivo (Dropdowns de Lista / Tabla)
+    window.changeStatus = async function(id, newStatus, selectElement) {
+        if (selectElement) {
+            selectElement.className = selectElement.className.replace(/st-\w+/, `st-${newStatus}`);
+        }
+        await moveLeadStage(id, newStatus);
     };
 
     // 7. Modal de Ficha Técnica & Bitácora de Seguimiento
@@ -836,21 +1070,95 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 12. Pestañas del Navbar
+    // 12. Switcher de Vista (Lista vs Tablero Kanban)
+    window.switchView = function(viewName) {
+        currentView = viewName;
+        const btnViewList = document.getElementById('btnViewList');
+        const btnViewKanban = document.getElementById('btnViewKanban');
+        const crmListView = document.getElementById('crmListView');
+        const crmKanbanSection = document.getElementById('crmKanbanSection');
+        const btnBottomNavList = document.getElementById('btnBottomNavList');
+        const btnBottomNavKanban = document.getElementById('btnBottomNavKanban');
+        const navTabBtns = document.querySelectorAll('.nav-tab-btn');
+
+        if (viewName === 'kanban') {
+            if (btnViewKanban) {
+                btnViewKanban.className = 'view-switch-btn active px-2.5 py-1 rounded-lg text-xs font-bold text-white bg-slate-800 shadow-sm flex items-center gap-1.5 transition-all';
+            }
+            if (btnViewList) {
+                btnViewList.className = 'view-switch-btn px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition-all flex items-center gap-1.5';
+            }
+            if (crmListView) crmListView.classList.add('hidden');
+            if (crmKanbanSection) crmKanbanSection.classList.remove('hidden');
+
+            if (btnBottomNavKanban) {
+                btnBottomNavKanban.className = 'flex flex-col items-center gap-1 text-[10px] font-bold text-purple-400 transition-colors';
+                const svg = btnBottomNavKanban.querySelector('svg');
+                if (svg) svg.className = 'w-5 h-5 text-purple-400';
+            }
+            if (btnBottomNavList) {
+                btnBottomNavList.className = 'flex flex-col items-center gap-1 text-[10px] font-bold text-slate-400 hover:text-brand-400 transition-colors';
+                const svg = btnBottomNavList.querySelector('svg');
+                if (svg) svg.className = 'w-5 h-5 text-slate-400';
+            }
+
+            navTabBtns.forEach(b => {
+                if (b.getAttribute('data-nav') === 'kanban') {
+                    b.className = 'nav-tab-btn active px-3.5 py-1.5 rounded-xl text-xs font-semibold text-white bg-slate-800 border border-slate-700/80 transition-all flex items-center gap-2';
+                } else {
+                    b.className = 'nav-tab-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 transition-all flex items-center gap-2';
+                }
+            });
+
+            renderKanbanBoard(getFilteredKanbanLeads());
+        } else {
+            if (btnViewList) {
+                btnViewList.className = 'view-switch-btn active px-2.5 py-1 rounded-lg text-xs font-bold text-white bg-slate-800 shadow-sm flex items-center gap-1.5 transition-all';
+            }
+            if (btnViewKanban) {
+                btnViewKanban.className = 'view-switch-btn px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition-all flex items-center gap-1.5';
+            }
+            if (crmListView) crmListView.classList.remove('hidden');
+            if (crmKanbanSection) crmKanbanSection.classList.add('hidden');
+
+            if (btnBottomNavList) {
+                btnBottomNavList.className = 'flex flex-col items-center gap-1 text-[10px] font-bold text-brand-400 transition-colors';
+                const svg = btnBottomNavList.querySelector('svg');
+                if (svg) svg.className = 'w-5 h-5 text-brand-400';
+            }
+            if (btnBottomNavKanban) {
+                btnBottomNavKanban.className = 'flex flex-col items-center gap-1 text-[10px] font-bold text-slate-400 hover:text-purple-400 transition-colors';
+                const svg = btnBottomNavKanban.querySelector('svg');
+                if (svg) svg.className = 'w-5 h-5 text-slate-400';
+            }
+
+            navTabBtns.forEach(b => {
+                if (b.getAttribute('data-nav') === 'dashboard') {
+                    b.className = 'nav-tab-btn active px-3.5 py-1.5 rounded-xl text-xs font-semibold text-white bg-slate-800 border border-slate-700/80 transition-all flex items-center gap-2';
+                } else {
+                    b.className = 'nav-tab-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 transition-all flex items-center gap-2';
+                }
+            });
+
+            filterAndRender();
+        }
+    };
+
+    const btnViewList = document.getElementById('btnViewList');
+    const btnViewKanban = document.getElementById('btnViewKanban');
+    if (btnViewList) btnViewList.addEventListener('click', () => switchView('list'));
+    if (btnViewKanban) btnViewKanban.addEventListener('click', () => switchView('kanban'));
+
+    // 13. Pestañas del Navbar
     const navTabBtns = document.querySelectorAll('.nav-tab-btn');
     navTabBtns.forEach(btn => {
         btn.addEventListener('click', () => {
-            navTabBtns.forEach(b => {
-                b.className = 'nav-tab-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 transition-all flex items-center gap-2';
-            });
-            btn.className = 'nav-tab-btn active px-3.5 py-1.5 rounded-xl text-xs font-semibold text-white bg-slate-800 border border-slate-700/80 transition-all flex items-center gap-2';
-            
             const nav = btn.getAttribute('data-nav');
             if (nav === 'dashboard' || nav === 'leads') {
+                switchView('list');
                 filterByState('all');
             } else if (nav === 'kanban') {
-                filterByState('nuevo');
-                showToast('Filtrando prospectos nuevos');
+                switchView('kanban');
             }
         });
     });

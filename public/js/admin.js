@@ -70,7 +70,60 @@ document.addEventListener('DOMContentLoaded', () => {
         { key: 'perdido', label: 'Perdido' }
     ];
 
-    // Helper Toast
+    // Helpers para Modales (100% Tailwind CSS nativo sin CSS adicional)
+    function showModal(modalEl) {
+        if (!modalEl) return;
+        modalEl.classList.remove('opacity-0', 'pointer-events-none');
+        modalEl.classList.add('opacity-100', 'pointer-events-auto');
+        const inner = modalEl.firstElementChild;
+        if (inner) {
+            inner.classList.remove('translate-y-full', 'sm:scale-95');
+            inner.classList.add('translate-y-0', 'sm:scale-100');
+        }
+    }
+
+    function hideModal(modalEl) {
+        if (!modalEl) return;
+        modalEl.classList.remove('opacity-100', 'pointer-events-auto');
+        modalEl.classList.add('opacity-0', 'pointer-events-none');
+        const inner = modalEl.firstElementChild;
+        if (inner) {
+            inner.classList.remove('translate-y-0', 'sm:scale-100');
+            inner.classList.add('translate-y-full', 'sm:scale-95');
+        }
+    }
+
+    // Helper de colores de estado con Tailwind CSS
+    function getStatusTailwindClass(status) {
+        switch(status) {
+            case 'nuevo':
+                return 'bg-amber-500/15 text-amber-300 border-amber-500/30';
+            case 'contactado':
+                return 'bg-sky-500/15 text-sky-300 border-sky-500/30';
+            case 'visita_tecnica_agendada':
+                return 'bg-purple-500/15 text-purple-300 border-purple-500/30';
+            case 'cotizacion_enviada':
+                return 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30';
+            case 'ganado_en_obra':
+                return 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30';
+            case 'perdido':
+                return 'bg-rose-500/15 text-rose-300 border-rose-500/30';
+            default:
+                return 'bg-amber-500/15 text-amber-300 border-amber-500/30';
+        }
+    }
+
+    const ALL_STATUS_CLASSES = [
+        'bg-amber-500/15', 'text-amber-300', 'border-amber-500/30',
+        'bg-sky-500/15', 'text-sky-300', 'border-sky-500/30',
+        'bg-purple-500/15', 'text-purple-300', 'border-purple-500/30',
+        'bg-indigo-500/15', 'text-indigo-300', 'border-indigo-500/30',
+        'bg-emerald-500/15', 'text-emerald-300', 'border-emerald-500/30',
+        'bg-rose-500/15', 'text-rose-300', 'border-rose-500/30'
+    ];
+
+    // Helper Toast con utilidades Tailwind
+    let toastTimer = null;
     function showToast(msg, icon = '✓', isError = false) {
         if (!toastNotice) return;
         toastMessage.textContent = msg;
@@ -82,9 +135,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 toastIconContainer.className = 'w-7 h-7 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold';
             }
         }
-        toastNotice.classList.add('toast-show');
-        setTimeout(() => {
-            toastNotice.classList.remove('toast-show');
+        toastNotice.classList.remove('translate-y-24', 'opacity-0', 'pointer-events-none');
+        toastNotice.classList.add('translate-y-0', 'opacity-100', 'pointer-events-auto');
+        if (toastTimer) clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => {
+            toastNotice.classList.remove('translate-y-0', 'opacity-100', 'pointer-events-auto');
+            toastNotice.classList.add('translate-y-24', 'opacity-0', 'pointer-events-none');
         }, 3000);
     }
 
@@ -124,11 +180,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await fetch('/api/health');
             const data = await res.json();
             if (data.database && data.database.firebase_connected) {
-                if (engineBadgeText) engineBadgeText.textContent = '🔥 Firestore (En Vivo)';
-            } else if (data.database && data.database.mysql_connected) {
-                if (engineBadgeText) engineBadgeText.textContent = '🐬 MySQL Conectado';
+                if (engineBadgeText) engineBadgeText.textContent = '🔥 Firebase Firestore';
             } else {
-                if (engineBadgeText) engineBadgeText.textContent = '💾 Base Local';
+                if (engineBadgeText) engineBadgeText.textContent = '💾 Memoria Temporal';
             }
         } catch (err) {
             if (engineBadgeText) engineBadgeText.textContent = '⚠️ Sin conexión';
@@ -386,7 +440,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     <!-- Fila de Estado del Embudo (Selector táctil a lo ancho) -->
                     <div>
-                        <select class="w-full status-select st-${lead.estado_lead || 'nuevo'} py-2.5 px-3 text-xs font-bold rounded-xl" onchange="changeStatus('${lead.id}', this.value, this)">
+                        <select class="w-full bg-dark-950 py-2 px-3 text-xs font-bold rounded-xl border focus:outline-none focus:ring-1 focus:ring-brand-500 cursor-pointer ${getStatusTailwindClass(lead.estado_lead || 'nuevo')}" onchange="changeStatus('${lead.id}', this.value, this)">
                             ${optionsHtml}
                         </select>
                     </div>
@@ -519,24 +573,24 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td class="py-4 px-4">
                         <div class="flex items-center gap-2">
                             <!-- Botón WhatsApp -->
-                            <a href="${waLink}" target="_blank" data-tooltip="Abrir WhatsApp" 
-                               class="action-btn p-2 rounded-xl bg-emerald-500/15 hover:bg-emerald-500 text-emerald-400 hover:text-white border border-emerald-500/30 transition-all duration-200 shadow-sm">
+                            <a href="${waLink}" target="_blank" title="Abrir WhatsApp" 
+                               class="p-2 rounded-xl bg-emerald-500/15 hover:bg-emerald-500 text-emerald-400 hover:text-white border border-emerald-500/30 hover:-translate-y-0.5 active:scale-95 transition-all duration-200 shadow-sm">
                                 <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                                     <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.299.144.35.49 1.199.533 1.287.043.088.072.19.014.305-.058.115-.087.187-.173.289l-.26.309c-.087.098-.179.204-.077.379.101.175.452.746.97 1.208.667.595 1.23.78 1.403.867.174.088.275.073.376-.044.101-.116.433-.506.549-.68.116-.174.231-.145.39-.087s1.011.477 1.184.564.289.13.332.203c.043.072.043.419-.101.824z" />
                                 </svg>
                             </a>
 
                             <!-- Botón Teléfono -->
-                            <a href="${telLink}" data-tooltip="Llamar" 
-                               class="action-btn p-2 rounded-xl bg-sky-500/15 hover:bg-sky-500 text-sky-400 hover:text-white border border-sky-500/30 transition-all duration-200 shadow-sm">
+                            <a href="${telLink}" title="Llamar" 
+                               class="p-2 rounded-xl bg-sky-500/15 hover:bg-sky-500 text-sky-400 hover:text-white border border-sky-500/30 hover:-translate-y-0.5 active:scale-95 transition-all duration-200 shadow-sm">
                                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                                 </svg>
                             </a>
 
                             <!-- Número con botón de copiar -->
-                            <button type="button" onclick="copyToClipboard('${cleanPhone}', 'Teléfono')" data-tooltip="Copiar teléfono" 
-                                    class="text-xs font-mono text-slate-300 hover:text-brand-400 px-2.5 py-1.5 rounded-xl bg-dark-950 border border-slate-800 hover:border-slate-700 transition-all flex items-center gap-1.5">
+                            <button type="button" onclick="copyToClipboard('${cleanPhone}', 'Teléfono')" title="Copiar teléfono" 
+                                    class="text-xs font-mono text-slate-300 hover:text-brand-400 px-2.5 py-1.5 rounded-xl bg-dark-950 border border-slate-800 hover:border-slate-700 hover:-translate-y-0.5 active:scale-95 transition-all flex items-center gap-1.5">
                                 <span>${lead.telefono || 'Sin número'}</span>
                                 <svg class="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -573,7 +627,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     <!-- Estado del Embudo -->
                     <td class="py-4 px-4">
-                        <select class="status-select st-${lead.estado_lead || 'nuevo'}" onchange="changeStatus('${lead.id}', this.value, this)">
+                        <select class="bg-dark-950 py-1.5 px-3 text-xs font-bold rounded-xl border focus:outline-none focus:ring-1 focus:ring-brand-500 cursor-pointer ${getStatusTailwindClass(lead.estado_lead || 'nuevo')}" onchange="changeStatus('${lead.id}', this.value, this)">
                             ${optionsHtml}
                         </select>
                     </td>
@@ -582,7 +636,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td class="py-4 px-4">
                         <span class="text-xs text-slate-300 block font-medium">${fecha}</span>
                         <span class="inline-flex items-center gap-1 text-[10px] text-slate-400 mt-0.5">
-                            <svg class="w-3 h-3 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg class="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
                             </svg>
                             ${lead.utm_campaign || lead.utm_source || lead.origen_lead || 'Directo / Web'}
@@ -593,8 +647,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td class="py-4 px-5 text-right">
                         <div class="flex items-center justify-end gap-2">
                             <!-- Botón Ficha & Bitácora -->
-                            <button type="button" onclick="openDetailModal('${lead.id}')" data-tooltip="Ficha & Bitácora" 
-                                    class="action-btn inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-500/15 hover:bg-purple-500 text-purple-400 hover:text-white border border-purple-500/30 text-xs font-semibold transition-all">
+                            <button type="button" onclick="openDetailModal('${lead.id}')" title="Ficha & Bitácora" 
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-500/15 hover:bg-purple-500 text-purple-400 hover:text-white border border-purple-500/30 text-xs font-semibold hover:-translate-y-0.5 active:scale-95 transition-all">
                                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                 </svg>
@@ -602,8 +656,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             </button>
 
                             <!-- Botón Eliminar -->
-                            <button type="button" onclick="deleteLead('${lead.id}', '${encodeURIComponent(lead.nombre_completo)}')" data-tooltip="Eliminar" 
-                                    class="action-btn p-2 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/30 transition-all">
+                            <button type="button" onclick="deleteLead('${lead.id}', '${encodeURIComponent(lead.nombre_completo)}')" title="Eliminar" 
+                                    class="p-2 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/30 hover:-translate-y-0.5 active:scale-95 transition-all">
                                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                 </svg>
@@ -672,7 +726,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 ` : '<span class="w-6"></span>';
 
                 return `
-                    <div class="kanban-card group bg-dark-950/90 hover:bg-dark-950 border border-slate-800 hover:border-slate-700/80 rounded-xl p-3 shadow-md space-y-2.5 cursor-grab active:cursor-grabbing select-none"
+                    <div class="kanban-card group bg-dark-950/90 hover:bg-dark-950 border border-slate-800 hover:border-slate-700/80 rounded-xl p-3 shadow-md space-y-2.5 cursor-grab active:cursor-grabbing select-none transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-black/50"
                          draggable="true" 
                          data-id="${lead.id}" 
                          data-status="${st.key}">
@@ -730,7 +784,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                                     </svg>
                                 </a>
-                                <button type="button" onclick="openDetailModal('${lead.id}')" class="p-1.5 rounded-lg bg-purple-500/15 hover:bg-purple-500 text-purple-400 hover:text-white border border-purple-500/30 transition-all text-xs" title="Ficha / Bitácora">
+                                <button type="button" onclick="openDetailModal('${lead.id}')" class="p-1.5 rounded-lg bg-purple-500/15 hover:bg-purple-500 text-purple-400 hover:text-white border border-purple-500/30 hover:-translate-y-0.5 active:scale-95 transition-all text-xs" title="Ficha / Bitácora">
                                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                     </svg>
@@ -763,13 +817,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 draggedLeadId = card.getAttribute('data-id');
                 e.dataTransfer.setData('text/plain', draggedLeadId);
                 e.dataTransfer.effectAllowed = 'move';
-                setTimeout(() => card.classList.add('is-dragging'), 0);
+                setTimeout(() => card.classList.add('opacity-40', 'scale-95'), 0);
             });
 
             card.addEventListener('dragend', () => {
-                card.classList.remove('is-dragging');
+                card.classList.remove('opacity-40', 'scale-95');
                 draggedLeadId = null;
-                dropzones.forEach(dz => dz.classList.remove('drag-over'));
+                dropzones.forEach(dz => dz.classList.remove('border-amber-400', 'bg-amber-500/10'));
             });
         });
 
@@ -777,20 +831,20 @@ document.addEventListener('DOMContentLoaded', () => {
             dz.addEventListener('dragover', (e) => {
                 e.preventDefault();
                 e.dataTransfer.dropEffect = 'move';
-                if (!dz.classList.contains('drag-over')) {
-                    dz.classList.add('drag-over');
+                if (!dz.classList.contains('border-amber-400')) {
+                    dz.classList.add('border-amber-400', 'bg-amber-500/10');
                 }
             });
 
             dz.addEventListener('dragleave', (e) => {
                 if (!dz.contains(e.relatedTarget)) {
-                    dz.classList.remove('drag-over');
+                    dz.classList.remove('border-amber-400', 'bg-amber-500/10');
                 }
             });
 
             dz.addEventListener('drop', (e) => {
                 e.preventDefault();
-                dz.classList.remove('drag-over');
+                dz.classList.remove('border-amber-400', 'bg-amber-500/10');
                 const leadId = e.dataTransfer.getData('text/plain') || draggedLeadId;
                 const targetStatus = dz.getAttribute('data-drop-status');
 
@@ -847,7 +901,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // 6. Cambio de Estado en Vivo (Dropdowns de Lista / Tabla)
     window.changeStatus = async function(id, newStatus, selectElement) {
         if (selectElement) {
-            selectElement.className = selectElement.className.replace(/st-\w+/, `st-${newStatus}`);
+            ALL_STATUS_CLASSES.forEach(cls => selectElement.classList.remove(cls));
+            getStatusTailwindClass(newStatus).split(' ').forEach(cls => selectElement.classList.add(cls));
         }
         await moveLeadStage(id, newStatus);
     };
@@ -871,11 +926,11 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('modalClientNotes').textContent = lead.detalles_adicionales || 'Sin notas adicionales ingresadas por el cliente.';
         modalAdminNotes.value = lead.notas_seguimiento || '';
 
-        detailModal.classList.add('modal-active');
+        showModal(detailModal);
     };
 
     function closeDetailModal() {
-        detailModal.classList.remove('modal-active');
+        hideModal(detailModal);
         selectedLeadForNotes = null;
     }
 
@@ -956,10 +1011,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // 9. Registrar Nuevo Prospecto
     function openNewLeadModal() {
         newLeadForm.reset();
-        newLeadModal.classList.add('modal-active');
+        showModal(newLeadModal);
     }
     function closeNewLeadModal() {
-        newLeadModal.classList.remove('modal-active');
+        hideModal(newLeadModal);
     }
 
     if (btnOpenNewLeadModal) btnOpenNewLeadModal.addEventListener('click', openNewLeadModal);
@@ -1424,7 +1479,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (projectModalTitle) projectModalTitle.textContent = 'Nueva Transformación';
         if (btnSubmitProjectText) btnSubmitProjectText.textContent = 'Guardar Transformación';
 
-        if (projectModal) projectModal.classList.add('modal-active');
+        showModal(projectModal);
     };
 
     // Abrir Modal para Editar
@@ -1462,11 +1517,11 @@ document.addEventListener('DOMContentLoaded', () => {
             btnResetFotoDespues.classList.remove('hidden');
         }
 
-        if (projectModal) projectModal.classList.add('modal-active');
+        showModal(projectModal);
     };
 
     function closeProjectModal() {
-        if (projectModal) projectModal.classList.remove('modal-active');
+        hideModal(projectModal);
     }
 
     if (btnOpenNewProjectModal) btnOpenNewProjectModal.addEventListener('click', openNewProjectModal);
@@ -1484,16 +1539,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
         dropzoneAntes.addEventListener('dragover', (e) => {
             e.preventDefault();
-            dropzoneAntes.classList.add('drag-active');
+            dropzoneAntes.classList.add('border-amber-400', 'bg-amber-400/10');
         });
 
         dropzoneAntes.addEventListener('dragleave', () => {
-            dropzoneAntes.classList.remove('drag-active');
+            dropzoneAntes.classList.remove('border-amber-400', 'bg-amber-400/10');
         });
 
         dropzoneAntes.addEventListener('drop', (e) => {
             e.preventDefault();
-            dropzoneAntes.classList.remove('drag-active');
+            dropzoneAntes.classList.remove('border-amber-400', 'bg-amber-400/10');
             const file = e.dataTransfer.files[0];
             if (file) handleFotoAntesSelected(file);
         });
@@ -1535,16 +1590,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
         dropzoneDespues.addEventListener('dragover', (e) => {
             e.preventDefault();
-            dropzoneDespues.classList.add('drag-active');
+            dropzoneDespues.classList.add('border-emerald-400', 'bg-emerald-400/10');
         });
 
         dropzoneDespues.addEventListener('dragleave', () => {
-            dropzoneDespues.classList.remove('drag-active');
+            dropzoneDespues.classList.remove('border-emerald-400', 'bg-emerald-400/10');
         });
 
         dropzoneDespues.addEventListener('drop', (e) => {
             e.preventDefault();
-            dropzoneDespues.classList.remove('drag-active');
+            dropzoneDespues.classList.remove('border-emerald-400', 'bg-emerald-400/10');
             const file = e.dataTransfer.files[0];
             if (file) handleFotoDespuesSelected(file);
         });

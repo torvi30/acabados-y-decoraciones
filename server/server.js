@@ -6,7 +6,6 @@ const cookieParser = require('cookie-parser');
 const path = require('path');
 require('dotenv').config();
 
-const { testConnection, isDbConnected } = require('./config/db');
 const { isFirebaseConnected } = require('./config/firebase');
 const leadRoutes = require('./routes/leadRoutes');
 const authRoutes = require('./routes/authRoutes');
@@ -42,17 +41,15 @@ app.use('/api', projectRoutes);
 // Endpoint de Salud / Diagnóstico del Backend
 app.get('/api/health', (req, res) => {
     const firebaseActive = isFirebaseConnected();
-    const mysqlActive = isDbConnected();
 
     res.json({
         status: 'online',
         service: 'Embudo y Mini-CRM Obra Blanca',
         database: {
             firebase_connected: firebaseActive,
-            mysql_connected: mysqlActive,
-            active_engine: firebaseActive ? 'firebase_firestore' : (mysqlActive ? 'mysql' : 'in_memory_fallback')
+            active_engine: firebaseActive ? 'firebase_firestore' : 'in_memory_fallback'
         },
-        database_connected: firebaseActive || mysqlActive,
+        database_connected: firebaseActive,
         timestamp: new Date().toISOString()
     });
 });
@@ -89,10 +86,8 @@ app.use((err, req, res, next) => {
     });
 });
 
-// Inicialización del servidor y prueba de base de datos
+// Inicialización del servidor
 async function startServer() {
-    await testConnection();
-
     app.listen(PORT, () => {
         console.log(`\n======================================================`);
         console.log(`🚀 Servidor ejecutándose en: http://localhost:${PORT}`);

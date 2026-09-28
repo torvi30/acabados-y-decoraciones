@@ -1,7 +1,6 @@
-const { query, isDbConnected } = require('../config/db');
 const { getDb, isFirebaseConnected } = require('../config/firebase');
 
-// Almacén en memoria temporal si la base de datos no está disponible (para desarrollo y testing inicial)
+// Almacén en memoria temporal si Firebase no está disponible
 const memoryLeads = [];
 let memoryAutoId = 1;
 
@@ -33,7 +32,7 @@ function calcularPresupuestoEstimado(tipoServicio, areaM2) {
 }
 
 /**
- * Guarda un nuevo lead / solicitud de cotización (Firebase Firestore > MySQL > Memoria)
+ * Guarda un nuevo lead / solicitud de cotización en Firebase Firestore
  * @param {Object} leadData 
  * @returns {Promise<Object>}
  */
@@ -82,7 +81,7 @@ async function createLead(leadData) {
         updated_at: new Date().toISOString()
     };
 
-    // 1. Prioridad: Firebase Firestore
+    // Firebase Firestore
     if (isFirebaseConnected()) {
         const firestoreDb = getDb();
         if (firestoreDb) {
@@ -98,63 +97,11 @@ async function createLead(leadData) {
         }
     }
 
-    // 2. Prioridad: MySQL
-    if (isDbConnected()) {
-        const sql = `
-            INSERT INTO leads_cotizaciones (
-                nombre_completo,
-                telefono,
-                email,
-                ciudad_zona,
-                tipo_inmueble,
-                estado_actual_obra,
-                tipo_servicio,
-                area_m2_estimada,
-                presupuesto_estimado,
-                detalles_adicionales,
-                origen_lead,
-                utm_source,
-                utm_medium,
-                utm_campaign,
-                estado_lead
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'nuevo')
-        `;
-
-        const params = [
-            nombre_completo,
-            telefono,
-            email,
-            ciudad_zona,
-            tipo_inmueble,
-            estado_actual_obra,
-            tipo_servicio,
-            m2Final,
-            presupuestoFinal,
-            detalles_adicionales,
-            origen_lead,
-            utm_source,
-            utm_medium,
-            utm_campaign
-        ];
-
-        const result = await query(sql, params);
-        
-        return {
-            id: result.insertId,
-            nombre_completo,
-            telefono,
-            tipo_servicio,
-            area_m2_estimada: m2Final,
-            presupuesto_estimado: presupuestoFinal,
-            created_at: new Date()
-        };
-    }
-
-    // 3. Fallback: Almacenamiento en memoria si DB aún no fue conectada
+    // Fallback en Memoria
     const memoryRecord = {
-        id: memoryAutoId++,
+        id: `mem_${memoryAutoId++}`,
         ...leadRecord,
-        created_at: new Date()
+        created_at: new Date().toISOString()
     };
     memoryLeads.unshift(memoryRecord);
     return memoryRecord;
@@ -163,8 +110,7 @@ async function createLead(leadData) {
 /**
  * Obtiene el listado de leads ordenados por fecha descendente
  */
-async function getAllLeads(limit = 50, offset = 0) {
-    // 1. Firebase Firestore
+async function getAllLeads(limit = 100, offset = 0) {
     if (isFirebaseConnected()) {
         const firestoreDb = getDb();
         if (firestoreDb) {
@@ -185,32 +131,7 @@ async function getAllLeads(limit = 50, offset = 0) {
         }
     }
 
-    // 2. MySQL
-    if (isDbConnected()) {
-        const sql = `
-            SELECT 
-                id,
-                nombre_completo,
-                telefono,
-                email,
-                ciudad_zona,
-                tipo_inmueble,
-                estado_actual_obra,
-                tipo_servicio,
-                area_m2_estimada,
-                presupuesto_estimado,
-                detalles_adicionales,
-                utm_source,
-                estado_lead,
-                created_at
-            FROM leads_cotizaciones
-            ORDER BY created_at DESC
-            LIMIT ? OFFSET ?
-        `;
-        return await query(sql, [parseInt(limit, 10), parseInt(offset, 10)]);
-    }
-
-    // 3. Fallback en Memoria
+    // Fallback en Memoria
     return memoryLeads.slice(offset, offset + limit);
 }
 
@@ -231,7 +152,6 @@ async function updateLeadStatus(id, nuevoEstado, notas = null) {
         throw new Error(`Estado '${nuevoEstado}' no es válido.`);
     }
 
-    // 1. Firebase Firestore
     if (isFirebaseConnected()) {
         const firestoreDb = getDb();
         if (firestoreDb) {
@@ -250,18 +170,7 @@ async function updateLeadStatus(id, nuevoEstado, notas = null) {
         }
     }
 
-    // 2. MySQL
-    if (isDbConnected()) {
-        const sql = `
-            UPDATE leads_cotizaciones
-            SET estado_lead = ?, notas_seguimiento = COALESCE(?, notas_seguimiento)
-            WHERE id = ?
-        `;
-        const result = await query(sql, [nuevoEstado, notas, id]);
-        return result.affectedRows > 0;
-    }
-
-    // 3. Fallback en Memoria
+    // Fallback en Memoria
     const lead = memoryLeads.find(item => String(item.id) === String(id));
     if (lead) {
         lead.estado_lead = nuevoEstado;
@@ -275,7 +184,6 @@ async function updateLeadStatus(id, nuevoEstado, notas = null) {
  * Actualiza las notas de seguimiento de un lead
  */
 async function updateLeadNotes(id, notas) {
-    // 1. Firebase Firestore
     if (isFirebaseConnected()) {
         const firestoreDb = getDb();
         if (firestoreDb) {
@@ -291,14 +199,7 @@ async function updateLeadNotes(id, notas) {
         }
     }
 
-    // 2. MySQL
-    if (isDbConnected()) {
-        const sql = `UPDATE leads_cotizaciones SET notas_seguimiento = ? WHERE id = ?`;
-        const result = await query(sql, [notas, id]);
-        return result.affectedRows > 0;
-    }
-
-    // 3. Fallback en Memoria
+    // Fallback en Memoria
     const lead = memoryLeads.find(item => String(item.id) === String(id));
     if (lead) {
         lead.notas_seguimiento = notas;
@@ -311,7 +212,6 @@ async function updateLeadNotes(id, notas) {
  * Elimina una cotización (ideal para pruebas o spam)
  */
 async function deleteLead(id) {
-    // 1. Firebase Firestore
     if (isFirebaseConnected()) {
         const firestoreDb = getDb();
         if (firestoreDb) {
@@ -324,14 +224,7 @@ async function deleteLead(id) {
         }
     }
 
-    // 2. MySQL
-    if (isDbConnected()) {
-        const sql = `DELETE FROM leads_cotizaciones WHERE id = ?`;
-        const result = await query(sql, [id]);
-        return result.affectedRows > 0;
-    }
-
-    // 3. Fallback en Memoria
+    // Fallback en Memoria
     const idx = memoryLeads.findIndex(item => String(item.id) === String(id));
     if (idx !== -1) {
         memoryLeads.splice(idx, 1);
@@ -344,7 +237,6 @@ async function deleteLead(id) {
  * Retorna métricas generales para el panel de control
  */
 async function getLeadMetrics() {
-    // 1. Firebase Firestore
     if (isFirebaseConnected()) {
         const firestoreDb = getDb();
         if (firestoreDb) {
@@ -380,31 +272,7 @@ async function getLeadMetrics() {
         }
     }
 
-    // 2. MySQL
-    if (isDbConnected()) {
-        const sqlTotales = `
-            SELECT 
-                COUNT(*) as total_leads,
-                SUM(COALESCE(area_m2_estimada, 0)) as total_m2,
-                SUM(COALESCE(presupuesto_estimado, 0)) as valor_estimado_total
-            FROM leads_cotizaciones
-        `;
-        const [totales] = await query(sqlTotales);
-
-        const sqlPorEstado = `
-            SELECT estado_lead, COUNT(*) as cantidad
-            FROM leads_cotizaciones
-            GROUP BY estado_lead
-        `;
-        const porEstado = await query(sqlPorEstado);
-
-        return {
-            resumen: totales,
-            por_estado: porEstado
-        };
-    }
-
-    // 3. Fallback en Memoria
+    // Fallback en Memoria
     const totalLeads = memoryLeads.length;
     const totalM2 = memoryLeads.reduce((acc, curr) => acc + (curr.area_m2_estimada || 0), 0);
     const valorTotal = memoryLeads.reduce((acc, curr) => acc + (curr.presupuesto_estimado || 0), 0);

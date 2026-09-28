@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node server/server.js",
     "dev": "nodemon server/server.js",
+    "build:css": "tailwindcss -i ./src/input.css -o ./public/css/admin.css --minify",
     "test": "node test/api-test.js"
   },
   "keywords": [],
@@ -22,6 +23,7 @@
     "mysql2": "^3.24.4"
   },
   "devDependencies": {
-    "nodemon": "^3.1.14"
+    "nodemon": "^3.1.14",
+    "tailwindcss": "^3.4.17"
   }
 }

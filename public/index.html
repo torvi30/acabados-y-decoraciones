@@ -155,15 +155,21 @@
 
             <!-- Contenedor del Slider -->
             <div class="slider-container" id="beforeAfterSlider">
-                <!-- Imagen ANTES (Obra Gris) -->
+                <!-- Imagen ANTES (Obra Gris de fondo) -->
                 <img src="/assets/images/obra_gris_before.jpg" alt="Apartamento en obra gris sin acabados" class="slider-img slider-before">
-                <span class="slider-badge slider-badge-before">Obra Gris</span>
 
                 <!-- Imagen DESPUÉS (Acabados Obra Blanca) con máscara recortable -->
                 <div class="slider-after-wrapper">
                     <img src="/assets/images/obra_blanca_after.jpg" alt="Apartamento terminado con acabados de lujo en obra blanca" class="slider-img slider-after">
-                    <span class="slider-badge slider-badge-after">Acabado Final</span>
                 </div>
+
+                <!-- Botones Interactivos Flotantes de Acceso Directo -->
+                <button type="button" class="slider-badge slider-badge-after" id="btnSlideAfter" title="Clic para ver 100% Acabado Final">
+                    <span>✨</span> Acabado Final
+                </button>
+                <button type="button" class="slider-badge slider-badge-before" id="btnSlideBefore" title="Clic para ver 100% Obra Gris">
+                    <span>🧱</span> Obra Gris
+                </button>
 
                 <!-- Línea y Manija divisoria arrastrable con el dedo / cursor -->
                 <div class="slider-handle-line">
@@ -174,8 +180,21 @@
                 </div>
             </div>
 
+            <!-- Botones de Control Rápido 100% y 50/50 -->
+            <div class="slider-controls-row">
+                <button type="button" class="slider-quick-pill" id="pillShowAfter">
+                    ✨ Ver 100% Acabado
+                </button>
+                <button type="button" class="slider-quick-pill active" id="pillShowSplit">
+                    ⚖️ Comparar 50 / 50
+                </button>
+                <button type="button" class="slider-quick-pill" id="pillShowBefore">
+                    🧱 Ver 100% Obra Gris
+                </button>
+            </div>
+
             <p class="slider-hint-text">
-                <span>👆</span> Desliza la barra con el dedo o el mouse para comparar cada detalle.
+                <span>👆</span> Toca los botones o desliza la manija central para comparar la transformación.
             </p>
         </div>
     </section>

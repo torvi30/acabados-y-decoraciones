@@ -514,34 +514,119 @@ h1, h2, h3, h4 {
     max-width: none;
 }
 
-/* Etiquetas flotantes Antes / Después */
+/* Botones interactivos flotantes Antes / Después */
 .slider-badge {
     position: absolute;
     top: 18px;
-    padding: 6px 14px;
+    padding: 8px 18px;
     border-radius: var(--radius-full);
-    font-size: 0.78rem;
+    font-size: 0.8rem;
     font-weight: 800;
     letter-spacing: 0.05em;
     text-transform: uppercase;
-    z-index: 5;
-    pointer-events: none;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(8px);
+    z-index: 25;
+    pointer-events: auto;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    user-select: none;
+    outline: none;
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease, background 0.25s ease, border-color 0.25s ease;
+}
+
+.slider-badge:hover {
+    transform: translateY(-3px) scale(1.06);
+}
+
+.slider-badge:active {
+    transform: scale(0.96);
 }
 
 .slider-badge-before {
     right: 18px;
-    background: rgba(220, 38, 38, 0.75);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(220, 38, 38, 0.82);
+    border: 1.5px solid rgba(248, 113, 113, 0.6);
     color: #fff;
+}
+
+.slider-badge-before:hover {
+    background: rgba(239, 68, 68, 0.95);
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.6);
+}
+
+.slider-badge-before.active {
+    background: #ef4444;
+    border-color: #fca5a5;
+    box-shadow: 0 0 25px rgba(239, 68, 68, 0.85), 0 0 0 2px #fff;
 }
 
 .slider-badge-after {
     left: 18px;
     background: rgba(16, 185, 129, 0.85);
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    border: 1.5px solid rgba(52, 211, 153, 0.6);
     color: #fff;
+}
+
+.slider-badge-after:hover {
+    background: rgba(16, 185, 129, 0.95);
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.6);
+}
+
+.slider-badge-after.active {
+    background: #10b981;
+    border-color: #6ee7b7;
+    box-shadow: 0 0 25px rgba(16, 185, 129, 0.85), 0 0 0 2px #fff;
+}
+
+/* Transición suave al animar posición al dar clic */
+.slider-container.has-transition .slider-after-wrapper,
+.slider-container.has-transition .slider-handle-line {
+    transition: width 0.65s cubic-bezier(0.16, 1, 0.3, 1), left 0.65s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+/* Fila de controles rápidos debajo del slider */
+.slider-controls-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 1.25rem;
+    flex-wrap: wrap;
+}
+
+.slider-quick-pill {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border-glass);
+    color: var(--text-muted);
+    font-size: 0.84rem;
+    font-weight: 700;
+    padding: 7px 18px;
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    transition: all 0.25s ease;
+    outline: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    user-select: none;
+}
+
+.slider-quick-pill:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+}
+
+.slider-quick-pill.active {
+    background: var(--primary);
+    color: #0b0f19;
+    border-color: var(--primary-light);
+    box-shadow: 0 0 16px var(--primary-glow);
 }
 
 /* Línea divisoria y manija de arrastre táctil */

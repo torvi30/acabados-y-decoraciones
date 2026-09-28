@@ -1,272 +1,550 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Administración | Obra Blanca & Acabados</title>
+    <title>Panel de Administración & CRM | Obra Blanca & Acabados</title>
     <meta name="robots" content="noindex, nofollow">
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
-    <!-- Estilos del Admin -->
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#fffbeb',
+                            100: '#fef3c7',
+                            200: '#fde68a',
+                            300: '#fcd34d',
+                            400: '#fbbf24',
+                            500: '#f59e0b',
+                            600: '#d97706',
+                            700: '#b45309',
+                            800: '#92400e',
+                            900: '#78350f',
+                            gold: '#f59e0b',
+                            accent: '#38bdf8'
+                        },
+                        dark: {
+                            950: '#070b12',
+                            900: '#0c131f',
+                            850: '#111a2b',
+                            800: '#172338',
+                            750: '#1d2c45',
+                            700: '#233654',
+                            border: '#1e293b'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+                        display: ['Outfit', 'system-ui', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'glow-amber': '0 0 25px -5px rgba(245, 158, 11, 0.3)',
+                        'glow-emerald': '0 0 25px -5px rgba(16, 185, 129, 0.3)',
+                        'glow-sky': '0 0 25px -5px rgba(14, 165, 233, 0.3)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Estilos Adicionales & Micro-interacciones -->
     <link rel="stylesheet" href="/css/admin.css">
 </head>
-<body>
+<body class="bg-dark-950 text-slate-100 font-sans antialiased min-h-screen selection:bg-brand-500 selection:text-dark-950">
 
-    <div class="admin-layout">
-        <!-- Barra Superior / Header del Admin -->
-        <header class="admin-header">
-            <div class="admin-header-inner">
-                <a href="/admin" class="admin-brand">
-                    <div class="admin-brand-icon">OB</div>
-                    <div>
-                        <h1 class="admin-brand-title">Obra Blanca • Control Central</h1>
-                        <span class="admin-brand-tagline">Mini-CRM & Pipeline de Obras</span>
-                    </div>
-                </a>
+    <!-- ==============================================================
+         NAVBAR PRINCIPAL ELEGANTE & MODERNO
+         ============================================================== -->
+    <header class="sticky top-0 z-40 w-full border-b border-slate-800/80 bg-dark-950/85 backdrop-blur-xl transition-all">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-20">
+                
+                <!-- Logo & Marca -->
+                <div class="flex items-center gap-4">
+                    <a href="/admin" class="flex items-center gap-3.5 group">
+                        <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-brand-400 via-brand-500 to-amber-700 flex items-center justify-center font-display font-black text-dark-950 text-lg shadow-lg shadow-brand-500/25 group-hover:scale-105 group-hover:shadow-glow-amber transition-all duration-300">
+                            OB
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="font-display font-extrabold text-white text-lg tracking-tight group-hover:text-brand-400 transition-colors">
+                                    Obra Blanca
+                                </span>
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-brand-500/10 border border-brand-500/30 text-brand-400 uppercase tracking-widest">
+                                    CRM PRO
+                                </span>
+                            </div>
+                            <p class="text-xs text-slate-400 font-medium">Control Central & Pipeline de Obras</p>
+                        </div>
+                    </a>
 
-                <div class="admin-header-actions">
-                    <!-- Badge del Motor de Base de Datos -->
-                    <div class="engine-badge" id="engineBadge" title="Estado de la base de datos">
-                        <span class="engine-pulse"></span>
+                    <!-- Separador vertical -->
+                    <div class="hidden lg:block h-7 w-[1px] bg-slate-800"></div>
+
+                    <!-- Badge de Estado de Firebase Firestore -->
+                    <div id="engineBadge" class="hidden sm:inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-slate-900 border border-slate-800 text-slate-300 shadow-inner">
+                        <span class="relative flex h-2 w-2">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                        </span>
                         <span id="engineBadgeText">Conectando...</span>
                     </div>
+                </div>
 
-                    <a href="/api/leads/export/csv" class="btn-adm btn-adm-outline" download title="Descargar base de datos en formato Excel">
-                        <span>⬇️</span> Exportar CSV
+                <!-- Enlaces Rápidos del Navbar (Navegación Intuitiva) -->
+                <nav class="hidden md:flex items-center gap-1 bg-dark-900/90 p-1.5 rounded-2xl border border-slate-800/80 shadow-inner">
+                    <button type="button" class="nav-tab-btn active px-3.5 py-1.5 rounded-xl text-xs font-semibold text-white bg-slate-800 border border-slate-700/80 transition-all shadow-sm flex items-center gap-2" data-nav="dashboard">
+                        <svg class="w-3.5 h-3.5 text-brand-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                        </svg>
+                        Dashboard
+                    </button>
+                    <button type="button" class="nav-tab-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 transition-all flex items-center gap-2" data-nav="leads">
+                        <svg class="w-3.5 h-3.5 text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                        Cotizaciones
+                    </button>
+                    <button type="button" class="nav-tab-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 transition-all flex items-center gap-2" data-nav="kanban">
+                        <svg class="w-3.5 h-3.5 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
+                        </svg>
+                        Pipeline
+                    </button>
+                </nav>
+
+                <!-- Botones Elegantes de Acción en Navbar -->
+                <div class="flex items-center gap-2.5">
+                    
+                    <!-- Botón Exportar CSV -->
+                    <a href="/api/leads/export/csv" download title="Descargar base de datos en Excel CSV" 
+                       class="hidden sm:inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-dark-900 hover:bg-dark-850 text-slate-300 hover:text-white border border-slate-800 hover:border-slate-700 transition-all shadow-sm active:scale-95 group">
+                        <svg class="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        <span class="hidden md:inline">Exportar CSV</span>
                     </a>
 
-                    <button type="button" class="btn-adm btn-adm-primary" id="btnOpenNewLeadModal">
-                        <span>➕</span> Nuevo Prospecto
+                    <!-- Botón Principal Elegante: Nuevo Prospecto -->
+                    <button type="button" id="btnOpenNewLeadModal" 
+                            class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-dark-950 bg-gradient-to-r from-brand-400 via-brand-500 to-amber-500 hover:from-brand-300 hover:to-brand-400 shadow-md shadow-brand-500/20 hover:shadow-glow-amber transition-all duration-200 active:scale-95">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                        </svg>
+                        <span>Nuevo Prospecto</span>
                     </button>
 
-                    <a href="/" target="_blank" class="btn-adm btn-adm-outline" title="Ver la página web pública">
-                        <span>🌐</span> Ver Web
+                    <!-- Botón Ver Web Pública -->
+                    <a href="/" target="_blank" title="Abrir página web pública" 
+                       class="inline-flex items-center justify-center p-2 sm:px-3 sm:py-2 rounded-xl text-xs font-semibold bg-dark-900 hover:bg-dark-850 text-slate-300 hover:text-white border border-slate-800 hover:border-slate-700 transition-all shadow-sm active:scale-95">
+                        <svg class="w-4 h-4 text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                        <span class="hidden lg:inline ml-2">Ver Web</span>
                     </a>
+
+                    <!-- Avatar del Administrador -->
+                    <div class="pl-1 flex items-center">
+                        <div class="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-bold text-brand-400" title="Sesión: Administrador">
+                            AD
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </header>
+
+    <!-- ==============================================================
+         CONTENIDO PRINCIPAL DEL DASHBOARD
+         ============================================================== -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        
+        <!-- Header de Bienvenida & Acciones Rápidas -->
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+                <h1 class="text-2xl sm:text-3xl font-display font-extrabold text-white tracking-tight">
+                    Tablero de Gestión Comercial
+                </h1>
+                <p class="text-sm text-slate-400 mt-1">
+                    Supervisa solicitudes de cotización, calcula presupuesto y gestiona el cierre de proyectos.
+                </p>
+            </div>
+            <div class="flex items-center gap-2">
+                <button type="button" id="btnRefreshLeads" 
+                        class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-dark-900 hover:bg-dark-850 text-slate-300 hover:text-white border border-slate-800 hover:border-slate-700 transition-all shadow-sm active:scale-95 group">
+                    <svg class="w-3.5 h-3.5 text-brand-400 group-hover:rotate-180 transition-transform duration-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    <span>Sincronizar</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- ==============================================================
+             TARJETAS KPI EJECUTIVAS (CLICKABLES PARA FILTRADO INTUITIVO)
+             ============================================================== -->
+        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            
+            <!-- Card 1: Total Cotizaciones -->
+            <div class="kpi-card relative overflow-hidden bg-gradient-to-br from-dark-900 to-dark-850 border border-slate-800/90 hover:border-brand-500/40 rounded-2xl p-5 shadow-lg transition-all duration-300 hover:-translate-y-0.5 cursor-pointer group" onclick="filterByState('all')">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Cotizaciones</span>
+                    <div class="w-10 h-10 rounded-xl bg-slate-800/80 border border-slate-700/60 flex items-center justify-center text-slate-300 group-hover:text-brand-400 group-hover:border-brand-500/40 transition-colors">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <div class="text-3xl font-display font-extrabold text-white tracking-tight" id="kpiTotalLeads">0</div>
+                    <div class="flex items-center gap-1.5 mt-2 text-xs font-semibold text-amber-400">
+                        <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                        <span id="kpiNewLeads">0 nuevos sin contactar</span>
+                    </div>
                 </div>
             </div>
-        </header>
 
-        <!-- Contenedor Principal del Dashboard -->
-        <main class="admin-main">
-            <!-- Cuadrícula de KPIs Comerciales -->
-            <section class="kpi-grid">
-                <div class="kpi-card">
-                    <div>
-                        <div class="kpi-title">Total Cotizaciones</div>
-                        <div class="kpi-value" id="kpiTotalLeads">0</div>
-                        <div class="kpi-subtext" id="kpiNewLeads">0 nuevos pendientes</div>
+            <!-- Card 2: Pipeline Estimado COP -->
+            <div class="kpi-card relative overflow-hidden bg-gradient-to-br from-dark-900 to-dark-850 border border-slate-800/90 hover:border-amber-500/40 rounded-2xl p-5 shadow-lg transition-all duration-300 hover:-translate-y-0.5 group">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Pipeline Estimado</span>
+                    <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 group-hover:border-amber-500/40 transition-colors">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
                     </div>
-                    <div class="kpi-icon-box">📋</div>
                 </div>
-
-                <div class="kpi-card">
-                    <div>
-                        <div class="kpi-title">Pipeline Estimado</div>
-                        <div class="kpi-value" id="kpiTotalValue" style="color:var(--adm-primary-light);">$0 COP</div>
-                        <div class="kpi-subtext">Valor acumulado en cotizaciones</div>
-                    </div>
-                    <div class="kpi-icon-box">💰</div>
+                <div class="mt-3">
+                    <div class="text-2xl sm:text-3xl font-display font-extrabold text-brand-400 tracking-tight" id="kpiTotalValue">$0 COP</div>
+                    <div class="mt-2 text-xs text-slate-400 font-medium">Valor acumulado en cotizaciones</div>
                 </div>
-
-                <div class="kpi-card">
-                    <div>
-                        <div class="kpi-title">Área Total Proyectada</div>
-                        <div class="kpi-value" id="kpiTotalM2" style="color:var(--adm-accent);">0 m²</div>
-                        <div class="kpi-subtext">Metraje total a intervenir</div>
-                    </div>
-                    <div class="kpi-icon-box">📐</div>
-                </div>
-
-                <div class="kpi-card">
-                    <div>
-                        <div class="kpi-title">Obras Ganadas</div>
-                        <div class="kpi-value" id="kpiWonLeads" style="color:var(--adm-success);">0</div>
-                        <div class="kpi-subtext" id="kpiConversionRate">Tasa de conversión: 0%</div>
-                    </div>
-                    <div class="kpi-icon-box">🏆</div>
-                </div>
-            </section>
-
-            <!-- Panel de Controles: Búsqueda y Filtros de Estado -->
-            <section class="crm-controls-panel">
-                <div class="crm-controls-top">
-                    <!-- Buscador en Vivo -->
-                    <div class="crm-search-box">
-                        <span class="crm-search-icon">🔍</span>
-                        <input type="text" id="searchInput" class="crm-search-input" placeholder="Buscar por cliente, teléfono, zona o servicio...">
-                    </div>
-
-                    <!-- Botón de Sincronizar / Refrescar -->
-                    <button type="button" class="btn-adm btn-adm-outline" id="btnRefreshLeads" style="padding: 0.55rem 0.9rem;">
-                        <span>🔄</span> Actualizar
-                    </button>
-                </div>
-
-                <!-- Tabs de Filtros de Estado -->
-                <div class="crm-tabs" id="crmFilterTabs">
-                    <button type="button" class="crm-tab-btn active" data-filter="all">
-                        Todos <span class="tab-counter" id="tabCountAll">0</span>
-                    </button>
-                    <button type="button" class="crm-tab-btn" data-filter="nuevo">
-                        🟡 Nuevos <span class="tab-counter" id="tabCountNuevo">0</span>
-                    </button>
-                    <button type="button" class="crm-tab-btn" data-filter="contactado">
-                        🔵 Contactados <span class="tab-counter" id="tabCountContactado">0</span>
-                    </button>
-                    <button type="button" class="crm-tab-btn" data-filter="visita_tecnica_agendada">
-                        🟣 Visitas Agendadas <span class="tab-counter" id="tabCountVisita">0</span>
-                    </button>
-                    <button type="button" class="crm-tab-btn" data-filter="cotizacion_enviada">
-                        🟡 Cotización Enviada <span class="tab-counter" id="tabCountCotizacion">0</span>
-                    </button>
-                    <button type="button" class="crm-tab-btn" data-filter="ganado_en_obra">
-                        🟢 Ganados en Obra <span class="tab-counter" id="tabCountGanado">0</span>
-                    </button>
-                    <button type="button" class="crm-tab-btn" data-filter="perdido">
-                        🔴 Perdidos <span class="tab-counter" id="tabCountPerdido">0</span>
-                    </button>
-                </div>
-            </section>
-
-            <!-- Tabla Principal del CRM -->
-            <section class="crm-table-card">
-                <div class="crm-table-container">
-                    <table class="crm-table">
-                        <thead>
-                            <tr>
-                                <th>Cliente</th>
-                                <th>Acciones Rápidas</th>
-                                <th>Proyecto & Metraje</th>
-                                <th>Presupuesto Est.</th>
-                                <th>Estado del Embudo</th>
-                                <th>Fecha & Origen</th>
-                                <th style="text-align:right;">Gestión</th>
-                            </tr>
-                        </thead>
-                        <tbody id="crmTableBody">
-                            <tr>
-                                <td colspan="7" style="text-align:center; padding:3rem; color:var(--adm-text-muted);">
-                                    Cargando cotizaciones desde la base de datos...
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-        </main>
-    </div>
-
-    <!-- ==========================================================
-         MODAL 1: FICHA TÉCNICA Y BITÁCORA DE SEGUIMIENTO
-         ========================================================== -->
-    <div class="adm-modal-overlay" id="leadDetailModal">
-        <div class="adm-modal-card">
-            <div class="adm-modal-header">
-                <div>
-                    <h3 style="font-size: 1.15rem; color:#fff;" id="modalClientName">Ficha del Cliente</h3>
-                    <span style="font-size: 0.8rem; color: var(--adm-text-muted);" id="modalLeadId">ID: --</span>
-                </div>
-                <button type="button" class="adm-modal-close" id="btnCloseDetailModal">&times;</button>
             </div>
-            <div class="adm-modal-body">
-                <div style="background: rgba(255,255,255,0.03); border:1px solid var(--adm-border); border-radius: var(--adm-radius-sm); padding: 1rem; display:grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                    <div>
-                        <span style="font-size:0.75rem; color:var(--adm-text-subtle); display:block;">Teléfono / WhatsApp:</span>
-                        <strong id="modalPhone" style="color:#fff;">--</strong>
+
+            <!-- Card 3: Metraje Total Proyectado -->
+            <div class="kpi-card relative overflow-hidden bg-gradient-to-br from-dark-900 to-dark-850 border border-slate-800/90 hover:border-sky-500/40 rounded-2xl p-5 shadow-lg transition-all duration-300 hover:-translate-y-0.5 group">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Área Proyectada</span>
+                    <div class="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400 group-hover:border-sky-500/40 transition-colors">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                        </svg>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <div class="text-3xl font-display font-extrabold text-sky-400 tracking-tight" id="kpiTotalM2">0 m²</div>
+                    <div class="mt-2 text-xs text-slate-400 font-medium">Metraje total a intervenir</div>
+                </div>
+            </div>
+
+            <!-- Card 4: Obras Ganadas / Cierre -->
+            <div class="kpi-card relative overflow-hidden bg-gradient-to-br from-dark-900 to-dark-850 border border-slate-800/90 hover:border-emerald-500/40 rounded-2xl p-5 shadow-lg transition-all duration-300 hover:-translate-y-0.5 cursor-pointer group" onclick="filterByState('ganado_en_obra')">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Obras Ganadas</span>
+                    <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 group-hover:border-emerald-500/40 transition-colors">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                        </svg>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <div class="text-3xl font-display font-extrabold text-emerald-400 tracking-tight" id="kpiWonLeads">0</div>
+                    <div class="mt-2 text-xs text-slate-400 font-medium" id="kpiConversionRate">Tasa de cierre: 0%</div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- ==============================================================
+             PANEL DE FILTRADO, BÚSQUEDA Y TABS DEL EMBUDO
+             ============================================================== -->
+        <section class="bg-dark-900 border border-slate-800/90 rounded-2xl p-4 sm:p-5 shadow-xl space-y-4">
+            
+            <!-- Barra de Búsqueda y Filtros Rápidos -->
+            <div class="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
+                
+                <!-- Input de Búsqueda en Vivo -->
+                <div class="relative flex-1">
+                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </div>
+                    <input type="text" id="searchInput" 
+                           class="w-full pl-10 pr-10 py-2.5 rounded-xl bg-dark-950 border border-slate-800 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all"
+                           placeholder="Buscar por cliente, teléfono, ciudad, servicio o notas...">
+                    <button type="button" id="btnClearSearch" class="hidden absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-slate-300">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Contador de registros filtrados -->
+                <div class="flex items-center justify-between md:justify-end gap-3 text-xs text-slate-400">
+                    <span id="filteredCountBadge" class="px-3 py-1.5 rounded-lg bg-dark-950 border border-slate-800 text-slate-300 font-medium">
+                        Cargando...
+                    </span>
+                </div>
+            </div>
+
+            <!-- Tabs de Estados del Embudo (Píldoras Elegantes) -->
+            <div class="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin" id="crmFilterTabs">
+                <button type="button" class="filter-tab-pill active flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all border shrink-0 bg-brand-500 text-dark-950 border-brand-400 shadow-md shadow-brand-500/20" data-filter="all">
+                    <span>Todos</span>
+                    <span class="px-1.5 py-0.2 rounded-md bg-dark-950/20 text-dark-950 text-[11px] font-black" id="tabCountAll">0</span>
+                </button>
+
+                <button type="button" class="filter-tab-pill flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all border shrink-0 bg-dark-950 text-slate-400 border-slate-800 hover:border-slate-700 hover:text-slate-200" data-filter="nuevo">
+                    <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                    <span>Nuevos</span>
+                    <span class="px-1.5 py-0.2 rounded-md bg-slate-800 text-slate-300 text-[11px] font-bold" id="tabCountNuevo">0</span>
+                </button>
+
+                <button type="button" class="filter-tab-pill flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all border shrink-0 bg-dark-950 text-slate-400 border-slate-800 hover:border-slate-700 hover:text-slate-200" data-filter="contactado">
+                    <span class="w-2 h-2 rounded-full bg-sky-400"></span>
+                    <span>Contactados</span>
+                    <span class="px-1.5 py-0.2 rounded-md bg-slate-800 text-slate-300 text-[11px] font-bold" id="tabCountContactado">0</span>
+                </button>
+
+                <button type="button" class="filter-tab-pill flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all border shrink-0 bg-dark-950 text-slate-400 border-slate-800 hover:border-slate-700 hover:text-slate-200" data-filter="visita_tecnica_agendada">
+                    <span class="w-2 h-2 rounded-full bg-purple-400"></span>
+                    <span>Visitas Agendadas</span>
+                    <span class="px-1.5 py-0.2 rounded-md bg-slate-800 text-slate-300 text-[11px] font-bold" id="tabCountVisita">0</span>
+                </button>
+
+                <button type="button" class="filter-tab-pill flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all border shrink-0 bg-dark-950 text-slate-400 border-slate-800 hover:border-slate-700 hover:text-slate-200" data-filter="cotizacion_enviada">
+                    <span class="w-2 h-2 rounded-full bg-indigo-400"></span>
+                    <span>Cotización Enviada</span>
+                    <span class="px-1.5 py-0.2 rounded-md bg-slate-800 text-slate-300 text-[11px] font-bold" id="tabCountCotizacion">0</span>
+                </button>
+
+                <button type="button" class="filter-tab-pill flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all border shrink-0 bg-dark-950 text-slate-400 border-slate-800 hover:border-slate-700 hover:text-slate-200" data-filter="ganado_en_obra">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                    <span>Ganados en Obra</span>
+                    <span class="px-1.5 py-0.2 rounded-md bg-slate-800 text-slate-300 text-[11px] font-bold" id="tabCountGanado">0</span>
+                </button>
+
+                <button type="button" class="filter-tab-pill flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all border shrink-0 bg-dark-950 text-slate-400 border-slate-800 hover:border-slate-700 hover:text-slate-200" data-filter="perdido">
+                    <span class="w-2 h-2 rounded-full bg-rose-400"></span>
+                    <span>Perdidos</span>
+                    <span class="px-1.5 py-0.2 rounded-md bg-slate-800 text-slate-300 text-[11px] font-bold" id="tabCountPerdido">0</span>
+                </button>
+            </div>
+
+        </section>
+
+        <!-- ==============================================================
+             TABLA ELEGANTE DE COTIZACIONES Y PROSPECTOS
+             ============================================================== -->
+        <section class="bg-dark-900 border border-slate-800/90 rounded-2xl shadow-xl overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                    <!-- Cabecera de la Tabla -->
+                    <thead class="bg-dark-950/70 text-[11px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-800">
+                        <tr>
+                            <th scope="col" class="py-4 px-5">Cliente & Ubicación</th>
+                            <th scope="col" class="py-4 px-4">Contacto Rápido</th>
+                            <th scope="col" class="py-4 px-4">Proyecto / Metraje</th>
+                            <th scope="col" class="py-4 px-4">Presupuesto Est.</th>
+                            <th scope="col" class="py-4 px-4">Estado del Embudo</th>
+                            <th scope="col" class="py-4 px-4">Fecha & Origen</th>
+                            <th scope="col" class="py-4 px-5 text-right">Gestión</th>
+                        </tr>
+                    </thead>
+                    <!-- Cuerpo de la Tabla -->
+                    <tbody id="crmTableBody" class="divide-y divide-slate-800/70 text-slate-300">
+                        <tr>
+                            <td colspan="7" class="py-12 text-center text-slate-400">
+                                <div class="inline-flex items-center gap-3">
+                                    <svg class="animate-spin h-5 w-5 text-brand-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    <span>Cargando cotizaciones desde Firebase Firestore...</span>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ==============================================================
+         MODAL / DRAWER 1: FICHA TÉCNICA Y BITÁCORA DE SEGUIMIENTO
+         ============================================================== -->
+    <div id="leadDetailModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-dark-950/80 backdrop-blur-md opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="relative w-full max-w-2xl bg-dark-900 border border-slate-700/80 rounded-3xl shadow-2xl overflow-hidden transform scale-95 transition-transform duration-300 max-h-[90vh] flex flex-col">
+            
+            <!-- Header Modal -->
+            <div class="px-6 py-5 border-b border-slate-800 flex items-center justify-between bg-dark-950/50">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-brand-500/10 border border-brand-500/30 flex items-center justify-center text-brand-400 font-bold">
+                        📋
                     </div>
                     <div>
-                        <span style="font-size:0.75rem; color:var(--adm-text-subtle); display:block;">Zona / Barrio:</span>
-                        <strong id="modalZone" style="color:#fff;">--</strong>
+                        <h3 class="text-lg font-bold text-white tracking-tight" id="modalClientName">Ficha del Cliente</h3>
+                        <p class="text-xs text-slate-400 font-mono" id="modalLeadId">ID: --</p>
+                    </div>
+                </div>
+                <button type="button" id="btnCloseDetailModal" class="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition-colors">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Cuerpo Modal con scroll -->
+            <div class="p-6 overflow-y-auto space-y-6">
+                
+                <!-- Cuadrícula de Datos de la Cotización -->
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-dark-950/60 p-4 rounded-2xl border border-slate-800/80">
+                    <div>
+                        <span class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">Teléfono / WhatsApp</span>
+                        <strong id="modalPhone" class="text-sm text-white font-medium block mt-0.5">--</strong>
                     </div>
                     <div>
-                        <span style="font-size:0.75rem; color:var(--adm-text-subtle); display:block;">Inmueble & Estado:</span>
-                        <strong id="modalProperty" style="color:var(--adm-primary-light);">--</strong>
+                        <span class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">Zona / Sector</span>
+                        <strong id="modalZone" class="text-sm text-white font-medium block mt-0.5">--</strong>
                     </div>
                     <div>
-                        <span style="font-size:0.75rem; color:var(--adm-text-subtle); display:block;">Servicio Solicitado:</span>
-                        <strong id="modalService" style="color:#fff;">--</strong>
+                        <span class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">Inmueble & Estado</span>
+                        <strong id="modalProperty" class="text-sm text-brand-400 font-medium block mt-0.5">--</strong>
                     </div>
                     <div>
-                        <span style="font-size:0.75rem; color:var(--adm-text-subtle); display:block;">Área Estimada:</span>
-                        <strong id="modalM2" style="color:var(--adm-accent);">-- m²</strong>
+                        <span class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">Servicio Solicitado</span>
+                        <strong id="modalService" class="text-sm text-white font-medium block mt-0.5 capitalize">--</strong>
                     </div>
                     <div>
-                        <span style="font-size:0.75rem; color:var(--adm-text-subtle); display:block;">Presupuesto Sugerido:</span>
-                        <strong id="modalBudget" style="color:var(--adm-success);">-- COP</strong>
+                        <span class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">Área Estimada</span>
+                        <strong id="modalM2" class="text-sm text-sky-400 font-medium block mt-0.5">-- m²</strong>
+                    </div>
+                    <div>
+                        <span class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">Presupuesto Calculado</span>
+                        <strong id="modalBudget" class="text-sm text-emerald-400 font-medium block mt-0.5">-- COP</strong>
                     </div>
                 </div>
 
-                <!-- Detalles que escribió el cliente -->
-                <div class="form-adm-group">
-                    <label class="form-adm-label">Comentarios / Expectativas del Cliente:</label>
-                    <div id="modalClientNotes" style="background:#06090f; border:1px solid var(--adm-border); border-radius:var(--adm-radius-sm); padding:0.8rem; font-size:0.86rem; color:#cbd5e1; min-height:50px;">
-                        Sin comentarios adicionales.
+                <!-- Detalles que el cliente envió en la web -->
+                <div class="space-y-1.5">
+                    <label class="text-xs font-bold uppercase tracking-wider text-slate-400">Comentarios o requerimientos del cliente:</label>
+                    <div id="modalClientNotes" class="bg-dark-950 border border-slate-800 rounded-xl p-3.5 text-xs text-slate-300 min-h-[60px] leading-relaxed">
+                        Sin notas adicionales.
                     </div>
                 </div>
 
                 <!-- Bitácora Interna de la Constructora -->
-                <div class="form-adm-group">
-                    <label class="form-adm-label">Bitácora Interna de Seguimiento (Solo visible para el Ingeniero/Admin):</label>
-                    <textarea id="modalAdminNotes" class="form-adm-textarea" rows="4" placeholder="Escribe aquí los acuerdos de la llamada, fecha de visita técnica, valor cotizado final, etc..."></textarea>
+                <div class="space-y-2">
+                    <div class="flex items-center justify-between">
+                        <label class="text-xs font-bold uppercase tracking-wider text-brand-400 flex items-center gap-1.5">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                            Bitácora Interna de Obra (Privada / Constructor)
+                        </label>
+                        <span class="text-[11px] text-slate-500">Historial de llamadas, visitas y acuerdos</span>
+                    </div>
+                    <textarea id="modalAdminNotes" rows="4" 
+                              class="w-full bg-dark-950 border border-slate-800 rounded-xl p-3.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all leading-relaxed"
+                              placeholder="Ej: Se coordinó visita técnica para el martes 3pm. El cliente tiene las llaves y solicita muestra de porcelanato 60x120..."></textarea>
                 </div>
 
-                <div style="display:flex; justify-content:flex-end; gap:10px; margin-top: 10px;">
-                    <button type="button" class="btn-adm btn-adm-outline" id="btnCancelDetailModal">Cerrar</button>
-                    <button type="button" class="btn-adm btn-adm-primary" id="btnSaveAdminNotes">
-                        💾 Guardar Bitácora
-                    </button>
-                </div>
             </div>
+
+            <!-- Footer Modal con Botones Elegantes -->
+            <div class="px-6 py-4 border-t border-slate-800 bg-dark-950/70 flex items-center justify-end gap-3">
+                <button type="button" id="btnCancelDetailModal" class="px-4 py-2 rounded-xl text-xs font-semibold bg-dark-900 hover:bg-dark-850 text-slate-300 border border-slate-800 hover:border-slate-700 transition-all">
+                    Cerrar
+                </button>
+                <button type="button" id="btnSaveAdminNotes" class="inline-flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold text-dark-950 bg-gradient-to-r from-brand-400 to-amber-500 hover:from-brand-300 hover:to-brand-400 shadow-md shadow-brand-500/20 active:scale-95 transition-all">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                    </svg>
+                    <span>Guardar Bitácora</span>
+                </button>
+            </div>
+
         </div>
     </div>
 
-    <!-- ==========================================================
+    <!-- ==============================================================
          MODAL 2: REGISTRAR PROSPECTO MANUALMENTE
-         ========================================================== -->
-    <div class="adm-modal-overlay" id="newLeadModal">
-        <div class="adm-modal-card">
-            <div class="adm-modal-header">
-                <div>
-                    <h3 style="font-size: 1.15rem; color:#fff;">Registrar Nuevo Prospecto</h3>
-                    <span style="font-size: 0.8rem; color: var(--adm-text-muted);">Para clientes que llamen o escriban directamente</span>
+         ============================================================== -->
+    <div id="newLeadModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-dark-950/80 backdrop-blur-md opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="relative w-full max-w-xl bg-dark-900 border border-slate-700/80 rounded-3xl shadow-2xl overflow-hidden transform scale-95 transition-transform duration-300 max-h-[90vh] flex flex-col">
+            
+            <div class="px-6 py-5 border-b border-slate-800 flex items-center justify-between bg-dark-950/50">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-brand-500/10 border border-brand-500/30 flex items-center justify-center text-brand-400 font-bold">
+                        ➕
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-white tracking-tight">Nuevo Prospecto de Obra</h3>
+                        <p class="text-xs text-slate-400">Ingreso manual de cotizaciones por llamada o WhatsApp</p>
+                    </div>
                 </div>
-                <button type="button" class="adm-modal-close" id="btnCloseNewLeadModal">&times;</button>
+                <button type="button" id="btnCloseNewLeadModal" class="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition-colors">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
             </div>
-            <div class="adm-modal-body">
-                <form id="newLeadForm">
-                    <div class="form-adm-group" style="margin-bottom:12px;">
-                        <label class="form-adm-label">Nombre Completo *</label>
-                        <input type="text" id="newLeadNombre" class="form-adm-input" placeholder="Ej: Santiago Montoya" required>
+
+            <form id="newLeadForm" class="flex flex-col overflow-y-auto">
+                <div class="p-6 space-y-4">
+                    
+                    <!-- Nombre Completo -->
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">Nombre Completo *</label>
+                        <input type="text" id="newLeadNombre" required 
+                               class="w-full bg-dark-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+                               placeholder="Ej: Carolina Arango">
                     </div>
 
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
-                        <div class="form-adm-group">
-                            <label class="form-adm-label">Teléfono / WhatsApp *</label>
-                            <input type="tel" id="newLeadTelefono" class="form-adm-input" placeholder="Ej: 3001234567" required>
+                    <!-- Teléfono y Ciudad -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">Teléfono / WhatsApp *</label>
+                            <input type="tel" id="newLeadTelefono" required 
+                                   class="w-full bg-dark-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+                                   placeholder="Ej: 3001234567">
                         </div>
-                        <div class="form-adm-group">
-                            <label class="form-adm-label">Ciudad / Sector</label>
-                            <input type="text" id="newLeadCiudad" class="form-adm-input" placeholder="Ej: Envigado, Las Antillas">
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">Ciudad o Sector</label>
+                            <input type="text" id="newLeadCiudad" 
+                                   class="w-full bg-dark-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+                                   placeholder="Ej: Sabaneta, Medellín, Poblado">
                         </div>
                     </div>
 
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
-                        <div class="form-adm-group">
-                            <label class="form-adm-label">Tipo de Inmueble</label>
-                            <select id="newLeadInmueble" class="form-adm-select">
+                    <!-- Tipo Inmueble y Servicio -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">Tipo de Inmueble</label>
+                            <select id="newLeadInmueble" 
+                                    class="w-full bg-dark-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500">
                                 <option value="apartamento">Apartamento</option>
                                 <option value="casa">Casa / Penthouse</option>
                                 <option value="oficina_comercial">Local / Oficina</option>
                                 <option value="otro">Otro</option>
                             </select>
                         </div>
-                        <div class="form-adm-group">
-                            <label class="form-adm-label">Servicio Principal</label>
-                            <select id="newLeadServicio" class="form-adm-select">
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">Servicio Principal</label>
+                            <select id="newLeadServicio" 
+                                    class="w-full bg-dark-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500">
                                 <option value="obra_blanca_completa">Obra Blanca Completa</option>
                                 <option value="cielo_raso_drywall">Drywall & Gargantas LED</option>
                                 <option value="enchapes_y_pisos">Enchapes & Porcelanato</option>
@@ -277,40 +555,57 @@
                         </div>
                     </div>
 
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
-                        <div class="form-adm-group">
-                            <label class="form-adm-label">Área Aproximada (m²)</label>
-                            <input type="number" id="newLeadM2" class="form-adm-input" placeholder="Ej: 75" value="65" min="10">
+                    <!-- Área y Presupuesto -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">Área Proyectada (m²)</label>
+                            <input type="number" id="newLeadM2" value="65" min="10" 
+                                   class="w-full bg-dark-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500">
                         </div>
-                        <div class="form-adm-group">
-                            <label class="form-adm-label">Presupuesto Sugerido (COP)</label>
-                            <input type="number" id="newLeadPresupuesto" class="form-adm-input" placeholder="Opcional">
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">Presupuesto Estimado (COP)</label>
+                            <input type="number" id="newLeadPresupuesto" placeholder="Opcional" 
+                                   class="w-full bg-dark-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500">
                         </div>
                     </div>
 
-                    <div class="form-adm-group" style="margin-bottom:16px;">
-                        <label class="form-adm-label">Observaciones iniciales:</label>
-                        <textarea id="newLeadDetalles" class="form-adm-textarea" rows="2" placeholder="Detalles o requerimientos iniciales del cliente..."></textarea>
+                    <!-- Notas -->
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">Observaciones Iniciales</label>
+                        <textarea id="newLeadDetalles" rows="2" 
+                                  class="w-full bg-dark-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+                                  placeholder="Detalles sobre entrega de llaves, acabados requeridos, etc..."></textarea>
                     </div>
 
-                    <div style="display:flex; justify-content:flex-end; gap:10px;">
-                        <button type="button" class="btn-adm btn-adm-outline" id="btnCancelNewLeadModal">Cancelar</button>
-                        <button type="submit" class="btn-adm btn-adm-primary">
-                            <span>✅</span> Guardar en CRM
-                        </button>
-                    </div>
-                </form>
-            </div>
+                </div>
+
+                <div class="px-6 py-4 border-t border-slate-800 bg-dark-950/70 flex items-center justify-end gap-3">
+                    <button type="button" id="btnCancelNewLeadModal" class="px-4 py-2 rounded-xl text-xs font-semibold bg-dark-900 hover:bg-dark-850 text-slate-300 border border-slate-800 hover:border-slate-700 transition-all">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="inline-flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold text-dark-950 bg-gradient-to-r from-brand-400 to-amber-500 hover:from-brand-300 hover:to-brand-400 shadow-md shadow-brand-500/20 active:scale-95 transition-all">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span>Guardar en CRM</span>
+                    </button>
+                </div>
+            </form>
+
         </div>
     </div>
 
-    <!-- Notificación Toast Flotante -->
-    <div class="toast-notice" id="toastNotice">
-        <span id="toastIcon">✓</span>
+    <!-- ==============================================================
+         NOTIFICACIÓN TOAST FLOTANTE MODERNO
+         ============================================================== -->
+    <div id="toastNotice" class="fixed bottom-6 right-6 z-50 transform translate-y-24 opacity-0 pointer-events-none transition-all duration-300 flex items-center gap-3 px-4 py-3 rounded-2xl bg-dark-900 border border-slate-700 shadow-2xl text-xs font-semibold text-white">
+        <div id="toastIconContainer" class="w-7 h-7 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
+            ✓
+        </div>
         <span id="toastMessage">Operación realizada con éxito</span>
     </div>
 
-    <!-- Script del Panel de Control -->
+    <!-- Lógica del Administrador -->
     <script src="/js/admin.js"></script>
 </body>
 </html>

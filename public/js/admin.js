@@ -1,6 +1,7 @@
 /**
  * ==========================================================================
- * ADMIN DASHBOARD & MINI-CRM SCRIPT (Firebase Firestore & REST API)
+ * ADMIN DASHBOARD & MINI-CRM SCRIPT (Tailwind CSS + Firebase Firestore)
+ * Obra Blanca & Acabados Arquitectónicos
  * ==========================================================================
  */
 
@@ -14,7 +15,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Elementos DOM
     const crmTableBody = document.getElementById('crmTableBody');
     const searchInput = document.getElementById('searchInput');
-    const filterTabs = document.querySelectorAll('.crm-tab-btn');
+    const btnClearSearch = document.getElementById('btnClearSearch');
+    const filterPills = document.querySelectorAll('.filter-tab-pill');
+    const filteredCountBadge = document.getElementById('filteredCountBadge');
     const btnRefresh = document.getElementById('btnRefreshLeads');
     const engineBadgeText = document.getElementById('engineBadgeText');
 
@@ -42,9 +45,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Toast
     const toastNotice = document.getElementById('toastNotice');
     const toastMessage = document.getElementById('toastMessage');
-    const toastIcon = document.getElementById('toastIcon');
+    const toastIconContainer = document.getElementById('toastIconContainer');
 
-    // Configuración de Estados
+    // Mapeo de Estados
     const ESTADOS = [
         { key: 'nuevo', label: 'Nuevo Lead' },
         { key: 'contactado', label: 'Contactado' },
@@ -54,17 +57,55 @@ document.addEventListener('DOMContentLoaded', () => {
         { key: 'perdido', label: 'Perdido' }
     ];
 
-    function showToast(msg, icon = '✓') {
+    // Helper Toast
+    function showToast(msg, icon = '✓', isError = false) {
         if (!toastNotice) return;
         toastMessage.textContent = msg;
-        toastIcon.textContent = icon;
-        toastNotice.style.display = 'flex';
+        if (toastIconContainer) {
+            toastIconContainer.textContent = icon;
+            if (isError) {
+                toastIconContainer.className = 'w-7 h-7 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center font-bold';
+            } else {
+                toastIconContainer.className = 'w-7 h-7 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold';
+            }
+        }
+        toastNotice.classList.add('toast-show');
         setTimeout(() => {
-            toastNotice.style.display = 'none';
+            toastNotice.classList.remove('toast-show');
         }, 3200);
     }
 
-    // 1. Diagnóstico del Backend y Base de Datos
+    // Copiar al portapapeles
+    window.copyToClipboard = function(text, label = 'Teléfono') {
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(text);
+        } else {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.opacity = '0';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                document.execCommand('copy');
+            } catch (err) {
+                console.error('Error al copiar:', err);
+            }
+            document.body.removeChild(textArea);
+        }
+        showToast(`${label} copiado al portapapeles`, '📋');
+    };
+
+    // Helper para iniciales de Avatar
+    function getInitials(name) {
+        if (!name) return 'OB';
+        const parts = name.trim().split(' ');
+        if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+        return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+
+    // 1. Diagnóstico del Backend y Firebase
     async function checkBackendHealth() {
         try {
             const res = await fetch('/api/health');
@@ -74,19 +115,25 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (data.database && data.database.mysql_connected) {
                 engineBadgeText.textContent = '🐬 MySQL Conectado';
             } else {
-                engineBadgeText.textContent = '💾 Modo Memoria (Pruebas)';
+                engineBadgeText.textContent = '💾 Base de Datos Local';
             }
         } catch (err) {
-            engineBadgeText.textContent = '⚠️ Sin conexión';
+            engineBadgeText.textContent = '⚠️ Sin conexión al servidor';
         }
     }
 
-    // 2. Carga Principal de Leads
+    // 2. Carga Principal de Leads desde el Backend
     async function loadLeads() {
         crmTableBody.innerHTML = `
             <tr>
-                <td colspan="7" style="text-align:center; padding:3rem; color:var(--adm-text-muted);">
-                    Cargando cotizaciones desde la base de datos...
+                <td colspan="7" class="py-12 text-center text-slate-400">
+                    <div class="inline-flex items-center gap-3">
+                        <svg class="animate-spin h-5 w-5 text-brand-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span>Cargando cotizaciones desde Firebase Firestore...</span>
+                    </div>
                 </td>
             </tr>
         `;
@@ -110,8 +157,9 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Error al cargar leads:', error);
             crmTableBody.innerHTML = `
                 <tr>
-                    <td colspan="7" style="text-align:center; padding:3rem; color:#ef4444;">
-                        Error de conexión al cargar datos del servidor.
+                    <td colspan="7" class="py-12 text-center text-rose-400">
+                        <p class="font-bold">Error de conexión al cargar datos de Firebase.</p>
+                        <span class="text-xs text-slate-500">Verifica que el servidor local esté activo.</span>
                     </td>
                 </tr>
             `;
@@ -135,7 +183,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (kpiConversionRate) kpiConversionRate.textContent = `Tasa de cierre: ${convRate}%`;
     }
 
-    // 4. Contadores de las pestañas
+    // 4. Actualización de Contadores en las Pestañas
     function updateTabCounters(leads) {
         const counts = {
             all: leads.length,
@@ -152,20 +200,28 @@ document.addEventListener('DOMContentLoaded', () => {
             if (counts[st] !== undefined) counts[st]++;
         });
 
-        document.getElementById('tabCountAll').textContent = counts.all;
-        document.getElementById('tabCountNuevo').textContent = counts.nuevo;
-        document.getElementById('tabCountContactado').textContent = counts.contactado;
-        document.getElementById('tabCountVisita').textContent = counts.visita_tecnica_agendada;
-        document.getElementById('tabCountCotizacion').textContent = counts.cotizacion_enviada;
-        document.getElementById('tabCountGanado').textContent = counts.ganado_en_obra;
-        document.getElementById('tabCountPerdido').textContent = counts.perdido;
+        const elAll = document.getElementById('tabCountAll');
+        const elNuevo = document.getElementById('tabCountNuevo');
+        const elContactado = document.getElementById('tabCountContactado');
+        const elVisita = document.getElementById('tabCountVisita');
+        const elCotizacion = document.getElementById('tabCountCotizacion');
+        const elGanado = document.getElementById('tabCountGanado');
+        const elPerdido = document.getElementById('tabCountPerdido');
+
+        if (elAll) elAll.textContent = counts.all;
+        if (elNuevo) elNuevo.textContent = counts.nuevo;
+        if (elContactado) elContactado.textContent = counts.contactado;
+        if (elVisita) elVisita.textContent = counts.visita_tecnica_agendada;
+        if (elCotizacion) elCotizacion.textContent = counts.cotizacion_enviada;
+        if (elGanado) elGanado.textContent = counts.ganado_en_obra;
+        if (elPerdido) elPerdido.textContent = counts.perdido;
     }
 
     // 5. Filtrado y Renderizado
     function filterAndRender() {
         let filtered = allLeads;
 
-        // Filtro por Tab
+        // Filtro por Estado seleccionado
         if (currentFilter !== 'all') {
             filtered = filtered.filter(l => l.estado_lead === currentFilter);
         }
@@ -178,8 +234,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 const tel = (l.telefono || '').toLowerCase();
                 const zona = (l.ciudad_zona || '').toLowerCase();
                 const serv = (l.tipo_servicio || '').toLowerCase();
-                return nombre.includes(q) || tel.includes(q) || zona.includes(q) || serv.includes(q);
+                const notas = (l.notas_seguimiento || '').toLowerCase();
+                const detalles = (l.detalles_adicionales || '').toLowerCase();
+                return nombre.includes(q) || tel.includes(q) || zona.includes(q) || serv.includes(q) || notas.includes(q) || detalles.includes(q);
             });
+        }
+
+        if (filteredCountBadge) {
+            filteredCountBadge.textContent = `Mostrando ${filtered.length} de ${allLeads.length} prospectos`;
         }
 
         renderTable(filtered);
@@ -188,10 +250,14 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderEmptyTable() {
         crmTableBody.innerHTML = `
             <tr>
-                <td colspan="7" style="text-align:center; padding:3.5rem 1rem; color:var(--adm-text-muted);">
-                    <div style="font-size: 2.2rem; margin-bottom: 0.5rem;">📂</div>
-                    <strong style="color:#fff; font-size:1rem; display:block;">No hay cotizaciones para mostrar</strong>
-                    <span>No se encontraron registros con los filtros seleccionados.</span>
+                <td colspan="7" class="py-16 text-center text-slate-400">
+                    <div class="w-16 h-16 rounded-2xl bg-dark-950 border border-slate-800 flex items-center justify-center mx-auto text-2xl text-slate-500 mb-3 shadow-inner">
+                        📂
+                    </div>
+                    <strong class="text-white text-base block font-bold">No se encontraron cotizaciones</strong>
+                    <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+                        No hay registros que coincidan con los filtros o término de búsqueda. Intenta limpiar la búsqueda.
+                    </p>
                 </td>
             </tr>
         `;
@@ -217,6 +283,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const telLink = `tel:+57${cleanPhone}`;
 
             const serviceName = (lead.tipo_servicio || 'obra_blanca_completa').replace(/_/g, ' ');
+            const initials = getInitials(lead.nombre_completo);
 
             const optionsHtml = ESTADOS.map(est => `
                 <option value="${est.key}" ${lead.estado_lead === est.key ? 'selected' : ''}>
@@ -224,59 +291,129 @@ document.addEventListener('DOMContentLoaded', () => {
                 </option>
             `).join('');
 
+            const hasNotes = lead.notas_seguimiento && lead.notas_seguimiento.trim().length > 0;
+
             return `
-                <tr data-id="${lead.id}">
-                    <td>
-                        <strong style="color:#fff; font-size:0.95rem; display:block;">${lead.nombre_completo}</strong>
-                        <span style="font-size:0.78rem; color:var(--adm-text-muted);">📍 ${lead.ciudad_zona || 'Área Metropolitana'}</span>
-                    </td>
-                    <td>
-                        <div class="row-actions">
-                            <a href="${waLink}" target="_blank" class="action-icon-btn wa-btn" title="Chatear por WhatsApp">
-                                💬
-                            </a>
-                            <a href="${telLink}" class="action-icon-btn" title="Llamar directamente">
-                                📞
-                            </a>
-                            <span style="font-size:0.82rem; color:#cbd5e1; margin-left:4px;">${lead.telefono}</span>
+                <tr class="hover:bg-slate-800/30 transition-colors group">
+                    
+                    <!-- Cliente & Ubicación -->
+                    <td class="py-4 px-5">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-800 to-dark-850 border border-slate-700/80 flex items-center justify-center font-display font-bold text-xs text-brand-400 shadow-sm shrink-0">
+                                ${initials}
+                            </div>
+                            <div>
+                                <strong class="text-white text-sm font-bold block group-hover:text-brand-400 transition-colors">
+                                    ${lead.nombre_completo}
+                                </strong>
+                                <span class="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
+                                    <svg class="w-3.5 h-3.5 text-rose-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
+                                    ${lead.ciudad_zona || 'Área Metropolitana'}
+                                </span>
+                            </div>
                         </div>
                     </td>
-                    <td>
-                        <strong style="display:block; color:#e2e8f0; text-transform:capitalize;">${serviceName}</strong>
-                        <span style="font-size:0.78rem; color:var(--adm-accent);">
-                            📐 ${lead.area_m2_estimada || 0} m² (${lead.tipo_inmueble || 'Apto'})
+
+                    <!-- Contacto Rápido con Botones Elegantes -->
+                    <td class="py-4 px-4">
+                        <div class="flex items-center gap-2">
+                            <!-- Botón WhatsApp -->
+                            <a href="${waLink}" target="_blank" data-tooltip="WhatsApp Directo" 
+                               class="action-btn p-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500 text-emerald-400 hover:text-white border border-emerald-500/30 transition-all duration-200 shadow-sm">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.299.144.35.49 1.199.533 1.287.043.088.072.19.014.305-.058.115-.087.187-.173.289l-.26.309c-.087.098-.179.204-.077.379.101.175.452.746.97 1.208.667.595 1.23.78 1.403.867.174.088.275.073.376-.044.101-.116.433-.506.549-.68.116-.174.231-.145.39-.087s1.011.477 1.184.564.289.13.332.203c.043.072.043.419-.101.824z" />
+                                </svg>
+                            </a>
+
+                            <!-- Botón Teléfono -->
+                            <a href="${telLink}" data-tooltip="Llamar" 
+                               class="action-btn p-2 rounded-xl bg-sky-500/10 hover:bg-sky-500 text-sky-400 hover:text-white border border-sky-500/30 transition-all duration-200 shadow-sm">
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                                </svg>
+                            </a>
+
+                            <!-- Número con botón de copiar -->
+                            <button type="button" onclick="copyToClipboard('${cleanPhone}', 'Teléfono de ${lead.nombre_completo}')" data-tooltip="Copiar teléfono" 
+                                    class="text-xs font-mono text-slate-300 hover:text-brand-400 px-2 py-1 rounded-lg bg-dark-950 border border-slate-800 hover:border-slate-700 transition-all flex items-center gap-1.5">
+                                <span>${lead.telefono || 'Sin número'}</span>
+                                <svg class="w-3 h-3 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                </svg>
+                            </button>
+                        </div>
+                    </td>
+
+                    <!-- Proyecto / Metraje -->
+                    <td class="py-4 px-4">
+                        <strong class="text-xs text-white capitalize block font-semibold">${serviceName}</strong>
+                        <div class="flex items-center gap-2 mt-1">
+                            <span class="inline-flex items-center gap-1 text-[11px] font-bold text-sky-400 bg-sky-500/10 px-2 py-0.5 rounded-md border border-sky-500/20">
+                                📐 ${lead.area_m2_estimada || 0} m²
+                            </span>
+                            <span class="text-[11px] text-slate-400 capitalize">
+                                ${lead.tipo_inmueble || 'Apto'}
+                            </span>
+                        </div>
+                    </td>
+
+                    <!-- Presupuesto Estimado -->
+                    <td class="py-4 px-4">
+                        <span class="text-xs font-extrabold text-brand-400 block tracking-tight font-display">
+                            ${presupuesto}
                         </span>
+                        <span class="text-[10px] text-slate-500 uppercase font-semibold">Valor Estimado</span>
                     </td>
-                    <td>
-                        <strong style="color:var(--adm-primary-light); font-size:0.92rem;">${presupuesto}</strong>
-                    </td>
-                    <td>
+
+                    <!-- Estado del Embudo (Selector Dinámico) -->
+                    <td class="py-4 px-4">
                         <select class="status-select st-${lead.estado_lead || 'nuevo'}" onchange="changeStatus('${lead.id}', this.value, this)">
                             ${optionsHtml}
                         </select>
                     </td>
-                    <td>
-                        <span style="font-size:0.8rem; color:#cbd5e1; display:block;">${fecha}</span>
-                        <span style="font-size:0.72rem; color:var(--adm-text-subtle);">
-                            🏷️ ${lead.utm_campaign || lead.utm_source || 'Directo / Web'}
+
+                    <!-- Fecha & Origen -->
+                    <td class="py-4 px-4">
+                        <span class="text-xs text-slate-300 block font-medium">${fecha}</span>
+                        <span class="inline-flex items-center gap-1 text-[10px] text-slate-400 mt-0.5">
+                            <svg class="w-3 h-3 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                            </svg>
+                            ${lead.utm_campaign || lead.utm_source || lead.origen_lead || 'Directo / Web'}
                         </span>
                     </td>
-                    <td style="text-align:right;">
-                        <div class="row-actions" style="justify-content: flex-end;">
-                            <button type="button" class="action-icon-btn" title="Ver detalles y bitácora" onclick="openDetailModal('${lead.id}')">
-                                📝
+
+                    <!-- Gestión / Bitácora (Botones Elegantes) -->
+                    <td class="py-4 px-5 text-right">
+                        <div class="flex items-center justify-end gap-2">
+                            <!-- Botón Ficha & Bitácora -->
+                            <button type="button" onclick="openDetailModal('${lead.id}')" data-tooltip="Ficha & Bitácora" 
+                                    class="action-btn inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-purple-500/10 hover:bg-purple-500 text-purple-400 hover:text-white border border-purple-500/30 text-xs font-semibold transition-all">
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                                <span>${hasNotes ? 'Bitácora •' : 'Ficha'}</span>
                             </button>
-                            <button type="button" class="action-icon-btn del-btn" title="Eliminar cotización" onclick="deleteLead('${lead.id}', '${encodeURIComponent(lead.nombre_completo)}')">
-                                🗑️
+
+                            <!-- Botón Eliminar Cotización -->
+                            <button type="button" onclick="deleteLead('${lead.id}', '${encodeURIComponent(lead.nombre_completo)}')" data-tooltip="Eliminar" 
+                                    class="action-btn p-1.5 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/30 transition-all">
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
                             </button>
                         </div>
                     </td>
+
                 </tr>
             `;
         }).join('');
     }
 
-    // 6. Cambio de Estado en Vivo (Sincronizado con Firebase)
+    // 6. Cambio de Estado en Vivo (Sincronizado con Firebase Firestore)
     window.changeStatus = async function(id, newStatus, selectElement) {
         try {
             const res = await fetch(`/api/leads/${id}/status`, {
@@ -287,21 +424,21 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await res.json();
 
             if (data.success) {
-                // Actualizar estado local
+                // Actualizar localmente
                 const item = allLeads.find(l => String(l.id) === String(id));
                 if (item) item.estado_lead = newStatus;
 
-                // Actualizar clase de color en select
+                // Actualizar clase en el select
                 selectElement.className = `status-select st-${newStatus}`;
                 updateKPIs(allLeads);
                 updateTabCounters(allLeads);
-                showToast(`Estado actualizado a: ${newStatus.replace(/_/g, ' ')}`);
+                showToast(`Estado actualizado: ${newStatus.replace(/_/g, ' ')}`);
             } else {
-                alert('No se pudo actualizar el estado: ' + (data.error || 'Error desconocido'));
+                showToast(`Error: ${data.error || 'No se pudo actualizar'}`, '⚠️', true);
             }
         } catch (err) {
             console.error('Error al actualizar estado:', err);
-            alert('Error de conexión al actualizar el estado.');
+            showToast('Error de conexión al actualizar estado', '⚠️', true);
         }
     };
 
@@ -321,21 +458,21 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('modalM2').textContent = `${lead.area_m2_estimada || 0} m²`;
         document.getElementById('modalBudget').textContent = lead.presupuesto_estimado ? `$${Number(lead.presupuesto_estimado).toLocaleString('es-CO')} COP` : 'A convenir';
         
-        document.getElementById('modalClientNotes').textContent = lead.detalles_adicionales || 'Sin comentarios adicionales por parte del cliente.';
+        document.getElementById('modalClientNotes').textContent = lead.detalles_adicionales || 'Sin notas adicionales ingresadas por el cliente.';
         modalAdminNotes.value = lead.notas_seguimiento || '';
 
-        detailModal.classList.add('active');
+        detailModal.classList.add('modal-active');
     };
 
     function closeDetailModal() {
-        detailModal.classList.remove('active');
+        detailModal.classList.remove('modal-active');
         selectedLeadForNotes = null;
     }
 
     if (btnCloseDetailModal) btnCloseDetailModal.addEventListener('click', closeDetailModal);
     if (btnCancelDetailModal) btnCancelDetailModal.addEventListener('click', closeDetailModal);
 
-    // Guardar Notas de Seguimiento en Firebase
+    // Guardar Notas de Seguimiento en Firebase Firestore
     if (btnSaveAdminNotes) {
         btnSaveAdminNotes.addEventListener('click', async () => {
             if (!selectedLeadForNotes) return;
@@ -343,7 +480,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
             try {
                 btnSaveAdminNotes.disabled = true;
-                btnSaveAdminNotes.textContent = 'Guardando...';
+                btnSaveAdminNotes.innerHTML = `
+                    <svg class="animate-spin h-4 w-4 text-dark-950" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>Guardando...</span>
+                `;
 
                 const res = await fetch(`/api/leads/${selectedLeadForNotes.id}/notes`, {
                     method: 'PATCH',
@@ -354,17 +497,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (data.success) {
                     selectedLeadForNotes.notas_seguimiento = notas;
-                    showToast('Bitácora de seguimiento guardada');
+                    showToast('Bitácora guardada en Firestore');
                     closeDetailModal();
+                    filterAndRender();
                 } else {
-                    alert('Error guardando notas: ' + data.error);
+                    showToast(`Error: ${data.error}`, '⚠️', true);
                 }
             } catch (err) {
                 console.error(err);
-                alert('Error de conexión al guardar bitácora.');
+                showToast('Error de conexión al guardar bitácora', '⚠️', true);
             } finally {
                 btnSaveAdminNotes.disabled = false;
-                btnSaveAdminNotes.textContent = '💾 Guardar Bitácora';
+                btnSaveAdminNotes.innerHTML = `
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                    </svg>
+                    <span>Guardar Bitácora</span>
+                `;
             }
         });
     }
@@ -372,7 +521,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 8. Eliminar Cotización
     window.deleteLead = async function(id, clientNameEncoded) {
         const clientName = decodeURIComponent(clientNameEncoded);
-        const confirmDelete = confirm(`¿Estás seguro de que deseas eliminar la cotización de "${clientName}"? Esta acción no se puede deshacer.`);
+        const confirmDelete = confirm(`¿Estás seguro de que deseas eliminar la cotización de "${clientName}"? Esta acción borrará el registro de Firebase.`);
         if (!confirmDelete) return;
 
         try {
@@ -386,21 +535,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 filterAndRender();
                 showToast(`Cotización de ${clientName} eliminada`, '🗑️');
             } else {
-                alert('No se pudo eliminar: ' + data.error);
+                showToast(`Error: ${data.error}`, '⚠️', true);
             }
         } catch (err) {
             console.error('Error al eliminar lead:', err);
-            alert('Error de conexión al eliminar.');
+            showToast('Error de conexión al eliminar', '⚠️', true);
         }
     };
 
     // 9. Registrar Nuevo Prospecto Manualmente
     function openNewLeadModal() {
         newLeadForm.reset();
-        newLeadModal.classList.add('active');
+        newLeadModal.classList.add('modal-active');
     }
     function closeNewLeadModal() {
-        newLeadModal.classList.remove('active');
+        newLeadModal.classList.remove('modal-active');
     }
 
     if (btnOpenNewLeadModal) btnOpenNewLeadModal.addEventListener('click', openNewLeadModal);
@@ -426,7 +575,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
             try {
                 submitBtn.disabled = true;
-                submitBtn.textContent = 'Guardando...';
+                submitBtn.innerHTML = `
+                    <svg class="animate-spin h-4 w-4 text-dark-950" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>Guardando...</span>
+                `;
 
                 const res = await fetch('/api/leads', {
                     method: 'POST',
@@ -436,36 +591,91 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await res.json();
 
                 if (data.success) {
-                    showToast('Prospecto registrado en Firebase Firestore');
+                    showToast('Prospecto guardado exitosamente en Firestore');
                     closeNewLeadModal();
                     await loadLeads();
                 } else {
-                    alert('Error: ' + data.error);
+                    showToast(`Error: ${data.error}`, '⚠️', true);
                 }
             } catch (err) {
                 console.error(err);
-                alert('Error al registrar prospecto.');
+                showToast('Error de conexión al registrar', '⚠️', true);
             } finally {
                 submitBtn.disabled = false;
-                submitBtn.innerHTML = '<span>✅</span> Guardar en CRM';
+                submitBtn.innerHTML = `
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span>Guardar en CRM</span>
+                `;
             }
         });
     }
 
-    // 10. Eventos de Búsqueda y Filtros
+    // 10. Filtrado Intuitivo por Estado (vía Píldoras o Tarjetas KPI)
+    window.filterByState = function(stateKey) {
+        currentFilter = stateKey;
+        
+        filterPills.forEach(btn => {
+            const f = btn.getAttribute('data-filter');
+            if (f === stateKey) {
+                btn.className = 'filter-tab-pill active flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all border shrink-0 bg-brand-500 text-dark-950 border-brand-400 shadow-md shadow-brand-500/20';
+            } else {
+                btn.className = 'filter-tab-pill flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all border shrink-0 bg-dark-950 text-slate-400 border-slate-800 hover:border-slate-700 hover:text-slate-200';
+            }
+        });
+
+        filterAndRender();
+    };
+
+    filterPills.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const filter = btn.getAttribute('data-filter');
+            filterByState(filter);
+        });
+    });
+
+    // 11. Búsqueda y Limpieza
     if (searchInput) {
         searchInput.addEventListener('input', (e) => {
             searchQuery = e.target.value.trim();
+            if (btnClearSearch) {
+                if (searchQuery.length > 0) {
+                    btnClearSearch.classList.remove('hidden');
+                } else {
+                    btnClearSearch.classList.add('hidden');
+                }
+            }
             filterAndRender();
         });
     }
 
-    filterTabs.forEach(btn => {
-        btn.addEventListener('click', () => {
-            filterTabs.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            currentFilter = btn.getAttribute('data-filter');
+    if (btnClearSearch) {
+        btnClearSearch.addEventListener('click', () => {
+            searchInput.value = '';
+            searchQuery = '';
+            btnClearSearch.classList.add('hidden');
             filterAndRender();
+            searchInput.focus();
+        });
+    }
+
+    // 12. Pestañas del Navbar (Dashboard / Leads / Pipeline)
+    const navTabBtns = document.querySelectorAll('.nav-tab-btn');
+    navTabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            navTabBtns.forEach(b => {
+                b.className = 'nav-tab-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 transition-all flex items-center gap-2';
+            });
+            btn.className = 'nav-tab-btn active px-3.5 py-1.5 rounded-xl text-xs font-semibold text-white bg-slate-800 border border-slate-700/80 transition-all shadow-sm flex items-center gap-2';
+            
+            const nav = btn.getAttribute('data-nav');
+            if (nav === 'dashboard' || nav === 'leads') {
+                filterByState('all');
+            } else if (nav === 'kanban') {
+                filterByState('nuevo');
+                showToast('Mostrando prospectos nuevos pendientes');
+            }
         });
     });
 
@@ -477,10 +687,18 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Cierre de modales al dar clic en el fondo oscuro
+    // Cierre de modales al hacer clic en el backdrop
     window.addEventListener('click', (e) => {
         if (e.target === detailModal) closeDetailModal();
         if (e.target === newLeadModal) closeNewLeadModal();
+    });
+
+    // Cierre con tecla Escape
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            closeDetailModal();
+            closeNewLeadModal();
+        }
     });
 
     // Carga inicial

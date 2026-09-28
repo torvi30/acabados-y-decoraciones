@@ -360,12 +360,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     <!-- Fila de Proyecto & Presupuesto -->
                     <div class="bg-dark-950/80 border border-slate-800/80 rounded-xl p-3 flex items-center justify-between gap-2">
-                        <div>
-                            <span class="text-[11px] text-slate-300 font-semibold block capitalize truncate max-w-[170px]">${serviceName}</span>
-                            <span class="text-[10px] text-sky-400 font-bold">📐 ${lead.area_m2_estimada || 0} m² (${lead.tipo_inmueble || 'Apto'})</span>
+                        <div class="min-w-0">
+                            <span class="text-xs text-white font-bold block capitalize truncate">${serviceName}</span>
+                            <div class="flex items-center gap-1.5 mt-1">
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-mono font-bold text-amber-400 bg-amber-500/10 border border-amber-500/25 whitespace-nowrap">
+                                    <svg class="w-3 h-3 text-amber-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                                    </svg>
+                                    <span>${Number(lead.area_m2_estimada || 0).toLocaleString('es-CO')} m²</span>
+                                </span>
+                                <span class="text-[11px] text-slate-400 capitalize truncate">
+                                    • ${lead.tipo_inmueble ? lead.tipo_inmueble.replace(/_/g, ' ') : 'Apartamento'}
+                                </span>
+                            </div>
                         </div>
-                        <div class="text-right">
-                            <span class="text-xs font-black text-brand-400 font-display block">${presupuesto}</span>
+                        <div class="text-right shrink-0">
+                            <span class="text-xs sm:text-sm font-black text-brand-400 font-display block">${presupuesto}</span>
                             <span class="text-[9px] uppercase tracking-wider text-slate-500 font-bold">Presupuesto</span>
                         </div>
                     </div>
@@ -502,15 +512,20 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                     </td>
 
-                    <!-- Proyecto / Metraje -->
-                    <td class="py-4 px-4">
-                        <strong class="text-xs text-white capitalize block font-semibold">${serviceName}</strong>
-                        <div class="flex items-center gap-1.5 mt-1">
-                            <span class="inline-flex items-center gap-1 text-[11px] font-bold text-sky-400 bg-sky-500/10 px-2 py-0.5 rounded-md border border-sky-500/20">
-                                📐 ${lead.area_m2_estimada || 0} m²
+                    <!-- Proyecto & Metraje (Diseño Arquitectónico Profesional) -->
+                    <td class="py-4 px-4 whitespace-nowrap">
+                        <span class="text-xs font-bold text-white capitalize block leading-tight tracking-tight">
+                            ${serviceName}
+                        </span>
+                        <div class="flex items-center gap-2 mt-1.5">
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono font-bold text-amber-400 bg-amber-500/10 border border-amber-500/25 shadow-sm whitespace-nowrap">
+                                <svg class="w-3.5 h-3.5 text-amber-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                                </svg>
+                                <span>${Number(lead.area_m2_estimada || 0).toLocaleString('es-CO')} m²</span>
                             </span>
-                            <span class="text-[11px] text-slate-400 capitalize">
-                                ${lead.tipo_inmueble || 'Apto'}
+                            <span class="text-xs text-slate-400 capitalize font-medium whitespace-nowrap">
+                                ${lead.tipo_inmueble ? lead.tipo_inmueble.replace(/_/g, ' ') : 'Apartamento'}
                             </span>
                         </div>
                     </td>
@@ -612,7 +627,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('modalZone').textContent = lead.ciudad_zona || 'Área Metropolitana';
         document.getElementById('modalProperty').textContent = `${lead.tipo_inmueble || 'Apartamento'} (${(lead.estado_actual_obra || 'obra_gris').replace(/_/g, ' ')})`;
         document.getElementById('modalService').textContent = (lead.tipo_servicio || 'obra_blanca_completa').replace(/_/g, ' ');
-        document.getElementById('modalM2').textContent = `${lead.area_m2_estimada || 0} m²`;
+        document.getElementById('modalM2').textContent = `${Number(lead.area_m2_estimada || 0).toLocaleString('es-CO')} m²`;
         document.getElementById('modalBudget').textContent = lead.presupuesto_estimado ? `$${Number(lead.presupuesto_estimado).toLocaleString('es-CO')} COP` : 'A convenir';
         
         document.getElementById('modalClientNotes').textContent = lead.detalles_adicionales || 'Sin notas adicionales ingresadas por el cliente.';

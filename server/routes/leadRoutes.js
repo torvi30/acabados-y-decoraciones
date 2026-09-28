@@ -1,19 +1,18 @@
 const express = require('express');
 const router = express.Router();
 const leadController = require('../controllers/leadController');
+const { requireAdminAuthApi } = require('../middlewares/authMiddleware');
 
-// Ruta principal para recepción de cotizaciones del embudo (Público)
+// Rutas Públicas (Landing page & Calculadora de cotizaciones)
 router.post('/leads', leadController.submitLead);
-
-// Endpoint rápido para cálculo de presupuesto en vivo
 router.get('/leads/estimate', leadController.estimatePrice);
 
-// Rutas de administración y Mini-CRM
-router.get('/leads/export/csv', leadController.exportCsv);
-router.get('/leads', leadController.listLeads);
-router.get('/leads/metrics', leadController.getMetrics);
-router.patch('/leads/:id/status', leadController.changeStatus);
-router.patch('/leads/:id/notes', leadController.updateNotes);
-router.delete('/leads/:id', leadController.deleteLead);
+// Rutas Protegidas del Mini-CRM (Solo personal autorizado)
+router.get('/leads/export/csv', requireAdminAuthApi, leadController.exportCsv);
+router.get('/leads', requireAdminAuthApi, leadController.listLeads);
+router.get('/leads/metrics', requireAdminAuthApi, leadController.getMetrics);
+router.patch('/leads/:id/status', requireAdminAuthApi, leadController.changeStatus);
+router.patch('/leads/:id/notes', requireAdminAuthApi, leadController.updateNotes);
+router.delete('/leads/:id', requireAdminAuthApi, leadController.deleteLead);
 
 module.exports = router;

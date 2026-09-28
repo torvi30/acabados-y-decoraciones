@@ -2,26 +2,30 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
+const cookieParser = require('cookie-parser');
 const path = require('path');
 require('dotenv').config();
 
 const { testConnection, isDbConnected } = require('./config/db');
 const { isFirebaseConnected } = require('./config/firebase');
 const leadRoutes = require('./routes/leadRoutes');
+const authRoutes = require('./routes/authRoutes');
+const { requireAdminAuthWeb } = require('./middlewares/authMiddleware');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Configuración de Seguridad con Helmet (Permitiendo recursos multimedia y fuentes)
+// Configuración de Seguridad con Helmet
 app.use(
     helmet({
-        contentSecurityPolicy: false, // Permitir scripts y videos locales/CDN sin bloqueo estricto en desarrollo
+        contentSecurityPolicy: false,
         crossOriginEmbedderPolicy: false
     })
 );
 
-// Middleware
+// Middlewares
 app.use(cors());
+app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
@@ -30,6 +34,7 @@ app.use(morgan('dev'));
 app.use(express.static(path.join(__dirname, '../public')));
 
 // Rutas de la API
+app.use('/api/auth', authRoutes);
 app.use('/api', leadRoutes);
 
 // Endpoint de Salud / Diagnóstico del Backend
@@ -50,8 +55,17 @@ app.get('/api/health', (req, res) => {
     });
 });
 
-// Ruta del Panel de Administración y Mini-CRM
-app.get('/admin', (req, res) => {
+// Ruta de Inicio de Sesión
+app.get('/login', (req, res) => {
+    // Si ya tiene cookie válida, redirigir directo al admin
+    if (req.cookies && req.cookies.ob_auth_token) {
+        return res.redirect('/admin');
+    }
+    res.sendFile(path.join(__dirname, '../public/login.html'));
+});
+
+// Ruta del Panel de Administración y Mini-CRM (Protegida)
+app.get('/admin', requireAdminAuthWeb, (req, res) => {
     res.sendFile(path.join(__dirname, '../public/admin.html'));
 });
 
@@ -64,7 +78,7 @@ app.use((req, res, next) => {
     res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
-// Manejador global de errores (Nunca expone stack traces en producción)
+// Manejador global de errores
 app.use((err, req, res, next) => {
     console.error('🔥 Error no controlado:', err);
     res.status(500).json({
@@ -81,13 +95,12 @@ async function startServer() {
         console.log(`\n======================================================`);
         console.log(`🚀 Servidor ejecutándose en: http://localhost:${PORT}`);
         console.log(`📁 Frontend servido desde: ./public`);
-        console.log(`🔌 API Base en: http://localhost:${PORT}/api/leads`);
-        console.log(`🩺 Health Check en: http://localhost:${PORT}/api/health`);
+        console.log(`🔒 Login en: http://localhost:${PORT}/login`);
+        console.log(`🛡️ Admin protegido en: http://localhost:${PORT}/admin`);
         console.log(`======================================================\n`);
     });
 }
 
-// Ejecutar servidor si es llamado directamente
 if (require.main === module) {
     startServer();
 }

@@ -156,6 +156,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             const res = await fetch('/api/leads');
+            if (res.status === 401) {
+                window.location.href = '/login';
+                return;
+            }
             const data = await res.json();
 
             if (data.success && Array.isArray(data.data)) {
@@ -850,6 +854,19 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+
+    // Cierre de sesión
+    const btnLogout = document.getElementById('btnLogout');
+    if (btnLogout) {
+        btnLogout.addEventListener('click', async () => {
+            try {
+                await fetch('/api/auth/logout', { method: 'POST' });
+            } catch (err) {
+                console.error('Error al cerrar sesión:', err);
+            }
+            window.location.href = '/login';
+        });
+    }
 
     if (btnRefresh) {
         btnRefresh.addEventListener('click', () => {

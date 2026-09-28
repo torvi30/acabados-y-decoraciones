@@ -272,6 +272,75 @@ async function updateLeadStatus(id, nuevoEstado, notas = null) {
 }
 
 /**
+ * Actualiza las notas de seguimiento de un lead
+ */
+async function updateLeadNotes(id, notas) {
+    // 1. Firebase Firestore
+    if (isFirebaseConnected()) {
+        const firestoreDb = getDb();
+        if (firestoreDb) {
+            try {
+                await firestoreDb.collection('leads').doc(String(id)).update({
+                    notas_seguimiento: notas,
+                    updated_at: new Date().toISOString()
+                });
+                return true;
+            } catch (fbError) {
+                console.error('⚠️ Error actualizando notas en Firestore:', fbError.message);
+            }
+        }
+    }
+
+    // 2. MySQL
+    if (isDbConnected()) {
+        const sql = `UPDATE leads_cotizaciones SET notas_seguimiento = ? WHERE id = ?`;
+        const result = await query(sql, [notas, id]);
+        return result.affectedRows > 0;
+    }
+
+    // 3. Fallback en Memoria
+    const lead = memoryLeads.find(item => String(item.id) === String(id));
+    if (lead) {
+        lead.notas_seguimiento = notas;
+        return true;
+    }
+    return false;
+}
+
+/**
+ * Elimina una cotización (ideal para pruebas o spam)
+ */
+async function deleteLead(id) {
+    // 1. Firebase Firestore
+    if (isFirebaseConnected()) {
+        const firestoreDb = getDb();
+        if (firestoreDb) {
+            try {
+                await firestoreDb.collection('leads').doc(String(id)).delete();
+                return true;
+            } catch (fbError) {
+                console.error('⚠️ Error eliminando lead en Firestore:', fbError.message);
+            }
+        }
+    }
+
+    // 2. MySQL
+    if (isDbConnected()) {
+        const sql = `DELETE FROM leads_cotizaciones WHERE id = ?`;
+        const result = await query(sql, [id]);
+        return result.affectedRows > 0;
+    }
+
+    // 3. Fallback en Memoria
+    const idx = memoryLeads.findIndex(item => String(item.id) === String(id));
+    if (idx !== -1) {
+        memoryLeads.splice(idx, 1);
+        return true;
+    }
+    return false;
+}
+
+/**
  * Retorna métricas generales para el panel de control
  */
 async function getLeadMetrics() {
@@ -405,6 +474,8 @@ module.exports = {
     createLead,
     getAllLeads,
     updateLeadStatus,
+    updateLeadNotes,
+    deleteLead,
     getLeadMetrics,
     calcularPresupuestoEstimado,
     exportLeadsToCsv

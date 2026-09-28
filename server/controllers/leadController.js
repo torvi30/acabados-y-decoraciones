@@ -263,10 +263,69 @@ async function exportCsv(req, res) {
     }
 }
 
+/**
+ * Actualiza las notas de seguimiento de un lead
+ */
+async function updateNotes(req, res) {
+    try {
+        const { id } = req.params;
+        const { notas } = req.body;
+
+        const updated = await leadService.updateLeadNotes(id, notas || '');
+        if (!updated) {
+            return res.status(404).json({
+                success: false,
+                error: 'Lead no encontrado para actualizar notas.'
+            });
+        }
+
+        return res.json({
+            success: true,
+            message: 'Notas de seguimiento actualizadas con éxito.'
+        });
+    } catch (error) {
+        console.error('Error actualizando notas:', error);
+        return res.status(500).json({
+            success: false,
+            error: error.message || 'Error al guardar notas.'
+        });
+    }
+}
+
+/**
+ * Elimina un lead / cotización
+ */
+async function deleteLead(req, res) {
+    try {
+        const { id } = req.params;
+        const deleted = await leadService.deleteLead(id);
+
+        if (!deleted) {
+            return res.status(404).json({
+                success: false,
+                error: 'Cotización no encontrada para eliminar.'
+            });
+        }
+
+        return res.json({
+            success: true,
+            message: 'Cotización eliminada con éxito.'
+        });
+    } catch (error) {
+        console.error('Error eliminando lead:', error);
+        return res.status(500).json({
+            success: false,
+            error: error.message || 'Error al eliminar cotización.'
+        });
+    }
+}
+
 module.exports = {
     submitLead,
     listLeads,
     changeStatus,
+    updateNotes,
+    deleteLead,
     getMetrics,
     estimatePrice,
     exportCsv

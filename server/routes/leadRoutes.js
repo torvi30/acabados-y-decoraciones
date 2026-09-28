@@ -13,5 +13,7 @@ router.get('/leads/export/csv', leadController.exportCsv);
 router.get('/leads', leadController.listLeads);
 router.get('/leads/metrics', leadController.getMetrics);
 router.patch('/leads/:id/status', leadController.changeStatus);
+router.patch('/leads/:id/notes', leadController.updateNotes);
+router.delete('/leads/:id', leadController.deleteLead);
 
 module.exports = router;

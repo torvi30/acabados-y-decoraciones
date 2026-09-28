@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración | Obra Blanca & Acabados</title>
+    <meta name="robots" content="noindex, nofollow">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Estilos del Admin -->
+    <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+
+    <div class="admin-layout">
+        <!-- Barra Superior / Header del Admin -->
+        <header class="admin-header">
+            <div class="admin-header-inner">
+                <a href="/admin" class="admin-brand">
+                    <div class="admin-brand-icon">OB</div>
+                    <div>
+                        <h1 class="admin-brand-title">Obra Blanca • Control Central</h1>
+                        <span class="admin-brand-tagline">Mini-CRM & Pipeline de Obras</span>
+                    </div>
+                </a>
+
+                <div class="admin-header-actions">
+                    <!-- Badge del Motor de Base de Datos -->
+                    <div class="engine-badge" id="engineBadge" title="Estado de la base de datos">
+                        <span class="engine-pulse"></span>
+                        <span id="engineBadgeText">Conectando...</span>
+                    </div>
+
+                    <a href="/api/leads/export/csv" class="btn-adm btn-adm-outline" download title="Descargar base de datos en formato Excel">
+                        <span>⬇️</span> Exportar CSV
+                    </a>
+
+                    <button type="button" class="btn-adm btn-adm-primary" id="btnOpenNewLeadModal">
+                        <span>➕</span> Nuevo Prospecto
+                    </button>
+
+                    <a href="/" target="_blank" class="btn-adm btn-adm-outline" title="Ver la página web pública">
+                        <span>🌐</span> Ver Web
+                    </a>
+                </div>
+            </div>
+        </header>
+
+        <!-- Contenedor Principal del Dashboard -->
+        <main class="admin-main">
+            <!-- Cuadrícula de KPIs Comerciales -->
+            <section class="kpi-grid">
+                <div class="kpi-card">
+                    <div>
+                        <div class="kpi-title">Total Cotizaciones</div>
+                        <div class="kpi-value" id="kpiTotalLeads">0</div>
+                        <div class="kpi-subtext" id="kpiNewLeads">0 nuevos pendientes</div>
+                    </div>
+                    <div class="kpi-icon-box">📋</div>
+                </div>
+
+                <div class="kpi-card">
+                    <div>
+                        <div class="kpi-title">Pipeline Estimado</div>
+                        <div class="kpi-value" id="kpiTotalValue" style="color:var(--adm-primary-light);">$0 COP</div>
+                        <div class="kpi-subtext">Valor acumulado en cotizaciones</div>
+                    </div>
+                    <div class="kpi-icon-box">💰</div>
+                </div>
+
+                <div class="kpi-card">
+                    <div>
+                        <div class="kpi-title">Área Total Proyectada</div>
+                        <div class="kpi-value" id="kpiTotalM2" style="color:var(--adm-accent);">0 m²</div>
+                        <div class="kpi-subtext">Metraje total a intervenir</div>
+                    </div>
+                    <div class="kpi-icon-box">📐</div>
+                </div>
+
+                <div class="kpi-card">
+                    <div>
+                        <div class="kpi-title">Obras Ganadas</div>
+                        <div class="kpi-value" id="kpiWonLeads" style="color:var(--adm-success);">0</div>
+                        <div class="kpi-subtext" id="kpiConversionRate">Tasa de conversión: 0%</div>
+                    </div>
+                    <div class="kpi-icon-box">🏆</div>
+                </div>
+            </section>
+
+            <!-- Panel de Controles: Búsqueda y Filtros de Estado -->
+            <section class="crm-controls-panel">
+                <div class="crm-controls-top">
+                    <!-- Buscador en Vivo -->
+                    <div class="crm-search-box">
+                        <span class="crm-search-icon">🔍</span>
+                        <input type="text" id="searchInput" class="crm-search-input" placeholder="Buscar por cliente, teléfono, zona o servicio...">
+                    </div>
+
+                    <!-- Botón de Sincronizar / Refrescar -->
+                    <button type="button" class="btn-adm btn-adm-outline" id="btnRefreshLeads" style="padding: 0.55rem 0.9rem;">
+                        <span>🔄</span> Actualizar
+                    </button>
+                </div>
+
+                <!-- Tabs de Filtros de Estado -->
+                <div class="crm-tabs" id="crmFilterTabs">
+                    <button type="button" class="crm-tab-btn active" data-filter="all">
+                        Todos <span class="tab-counter" id="tabCountAll">0</span>
+                    </button>
+                    <button type="button" class="crm-tab-btn" data-filter="nuevo">
+                        🟡 Nuevos <span class="tab-counter" id="tabCountNuevo">0</span>
+                    </button>
+                    <button type="button" class="crm-tab-btn" data-filter="contactado">
+                        🔵 Contactados <span class="tab-counter" id="tabCountContactado">0</span>
+                    </button>
+                    <button type="button" class="crm-tab-btn" data-filter="visita_tecnica_agendada">
+                        🟣 Visitas Agendadas <span class="tab-counter" id="tabCountVisita">0</span>
+                    </button>
+                    <button type="button" class="crm-tab-btn" data-filter="cotizacion_enviada">
+                        🟡 Cotización Enviada <span class="tab-counter" id="tabCountCotizacion">0</span>
+                    </button>
+                    <button type="button" class="crm-tab-btn" data-filter="ganado_en_obra">
+                        🟢 Ganados en Obra <span class="tab-counter" id="tabCountGanado">0</span>
+                    </button>
+                    <button type="button" class="crm-tab-btn" data-filter="perdido">
+                        🔴 Perdidos <span class="tab-counter" id="tabCountPerdido">0</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Tabla Principal del CRM -->
+            <section class="crm-table-card">
+                <div class="crm-table-container">
+                    <table class="crm-table">
+                        <thead>
+                            <tr>
+                                <th>Cliente</th>
+                                <th>Acciones Rápidas</th>
+                                <th>Proyecto & Metraje</th>
+                                <th>Presupuesto Est.</th>
+                                <th>Estado del Embudo</th>
+                                <th>Fecha & Origen</th>
+                                <th style="text-align:right;">Gestión</th>
+                            </tr>
+                        </thead>
+                        <tbody id="crmTableBody">
+                            <tr>
+                                <td colspan="7" style="text-align:center; padding:3rem; color:var(--adm-text-muted);">
+                                    Cargando cotizaciones desde la base de datos...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- ==========================================================
+         MODAL 1: FICHA TÉCNICA Y BITÁCORA DE SEGUIMIENTO
+         ========================================================== -->
+    <div class="adm-modal-overlay" id="leadDetailModal">
+        <div class="adm-modal-card">
+            <div class="adm-modal-header">
+                <div>
+                    <h3 style="font-size: 1.15rem; color:#fff;" id="modalClientName">Ficha del Cliente</h3>
+                    <span style="font-size: 0.8rem; color: var(--adm-text-muted);" id="modalLeadId">ID: --</span>
+                </div>
+                <button type="button" class="adm-modal-close" id="btnCloseDetailModal">&times;</button>
+            </div>
+            <div class="adm-modal-body">
+                <div style="background: rgba(255,255,255,0.03); border:1px solid var(--adm-border); border-radius: var(--adm-radius-sm); padding: 1rem; display:grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div>
+                        <span style="font-size:0.75rem; color:var(--adm-text-subtle); display:block;">Teléfono / WhatsApp:</span>
+                        <strong id="modalPhone" style="color:#fff;">--</strong>
+                    </div>
+                    <div>
+                        <span style="font-size:0.75rem; color:var(--adm-text-subtle); display:block;">Zona / Barrio:</span>
+                        <strong id="modalZone" style="color:#fff;">--</strong>
+                    </div>
+                    <div>
+                        <span style="font-size:0.75rem; color:var(--adm-text-subtle); display:block;">Inmueble & Estado:</span>
+                        <strong id="modalProperty" style="color:var(--adm-primary-light);">--</strong>
+                    </div>
+                    <div>
+                        <span style="font-size:0.75rem; color:var(--adm-text-subtle); display:block;">Servicio Solicitado:</span>
+                        <strong id="modalService" style="color:#fff;">--</strong>
+                    </div>
+                    <div>
+                        <span style="font-size:0.75rem; color:var(--adm-text-subtle); display:block;">Área Estimada:</span>
+                        <strong id="modalM2" style="color:var(--adm-accent);">-- m²</strong>
+                    </div>
+                    <div>
+                        <span style="font-size:0.75rem; color:var(--adm-text-subtle); display:block;">Presupuesto Sugerido:</span>
+                        <strong id="modalBudget" style="color:var(--adm-success);">-- COP</strong>
+                    </div>
+                </div>
+
+                <!-- Detalles que escribió el cliente -->
+                <div class="form-adm-group">
+                    <label class="form-adm-label">Comentarios / Expectativas del Cliente:</label>
+                    <div id="modalClientNotes" style="background:#06090f; border:1px solid var(--adm-border); border-radius:var(--adm-radius-sm); padding:0.8rem; font-size:0.86rem; color:#cbd5e1; min-height:50px;">
+                        Sin comentarios adicionales.
+                    </div>
+                </div>
+
+                <!-- Bitácora Interna de la Constructora -->
+                <div class="form-adm-group">
+                    <label class="form-adm-label">Bitácora Interna de Seguimiento (Solo visible para el Ingeniero/Admin):</label>
+                    <textarea id="modalAdminNotes" class="form-adm-textarea" rows="4" placeholder="Escribe aquí los acuerdos de la llamada, fecha de visita técnica, valor cotizado final, etc..."></textarea>
+                </div>
+
+                <div style="display:flex; justify-content:flex-end; gap:10px; margin-top: 10px;">
+                    <button type="button" class="btn-adm btn-adm-outline" id="btnCancelDetailModal">Cerrar</button>
+                    <button type="button" class="btn-adm btn-adm-primary" id="btnSaveAdminNotes">
+                        💾 Guardar Bitácora
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================================
+         MODAL 2: REGISTRAR PROSPECTO MANUALMENTE
+         ========================================================== -->
+    <div class="adm-modal-overlay" id="newLeadModal">
+        <div class="adm-modal-card">
+            <div class="adm-modal-header">
+                <div>
+                    <h3 style="font-size: 1.15rem; color:#fff;">Registrar Nuevo Prospecto</h3>
+                    <span style="font-size: 0.8rem; color: var(--adm-text-muted);">Para clientes que llamen o escriban directamente</span>
+                </div>
+                <button type="button" class="adm-modal-close" id="btnCloseNewLeadModal">&times;</button>
+            </div>
+            <div class="adm-modal-body">
+                <form id="newLeadForm">
+                    <div class="form-adm-group" style="margin-bottom:12px;">
+                        <label class="form-adm-label">Nombre Completo *</label>
+                        <input type="text" id="newLeadNombre" class="form-adm-input" placeholder="Ej: Santiago Montoya" required>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
+                        <div class="form-adm-group">
+                            <label class="form-adm-label">Teléfono / WhatsApp *</label>
+                            <input type="tel" id="newLeadTelefono" class="form-adm-input" placeholder="Ej: 3001234567" required>
+                        </div>
+                        <div class="form-adm-group">
+                            <label class="form-adm-label">Ciudad / Sector</label>
+                            <input type="text" id="newLeadCiudad" class="form-adm-input" placeholder="Ej: Envigado, Las Antillas">
+                        </div>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
+                        <div class="form-adm-group">
+                            <label class="form-adm-label">Tipo de Inmueble</label>
+                            <select id="newLeadInmueble" class="form-adm-select">
+                                <option value="apartamento">Apartamento</option>
+                                <option value="casa">Casa / Penthouse</option>
+                                <option value="oficina_comercial">Local / Oficina</option>
+                                <option value="otro">Otro</option>
+                            </select>
+                        </div>
+                        <div class="form-adm-group">
+                            <label class="form-adm-label">Servicio Principal</label>
+                            <select id="newLeadServicio" class="form-adm-select">
+                                <option value="obra_blanca_completa">Obra Blanca Completa</option>
+                                <option value="cielo_raso_drywall">Drywall & Gargantas LED</option>
+                                <option value="enchapes_y_pisos">Enchapes & Porcelanato</option>
+                                <option value="estuco_y_pintura">Estuco & Pintura</option>
+                                <option value="cocinas_y_carpinteria">Cocinas & Carpintería</option>
+                                <option value="iluminacion_y_domotica">Iluminación & Domótica</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
+                        <div class="form-adm-group">
+                            <label class="form-adm-label">Área Aproximada (m²)</label>
+                            <input type="number" id="newLeadM2" class="form-adm-input" placeholder="Ej: 75" value="65" min="10">
+                        </div>
+                        <div class="form-adm-group">
+                            <label class="form-adm-label">Presupuesto Sugerido (COP)</label>
+                            <input type="number" id="newLeadPresupuesto" class="form-adm-input" placeholder="Opcional">
+                        </div>
+                    </div>
+
+                    <div class="form-adm-group" style="margin-bottom:16px;">
+                        <label class="form-adm-label">Observaciones iniciales:</label>
+                        <textarea id="newLeadDetalles" class="form-adm-textarea" rows="2" placeholder="Detalles o requerimientos iniciales del cliente..."></textarea>
+                    </div>
+
+                    <div style="display:flex; justify-content:flex-end; gap:10px;">
+                        <button type="button" class="btn-adm btn-adm-outline" id="btnCancelNewLeadModal">Cancelar</button>
+                        <button type="submit" class="btn-adm btn-adm-primary">
+                            <span>✅</span> Guardar en CRM
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notificación Toast Flotante -->
+    <div class="toast-notice" id="toastNotice">
+        <span id="toastIcon">✓</span>
+        <span id="toastMessage">Operación realizada con éxito</span>
+    </div>
+
+    <!-- Script del Panel de Control -->
+    <script src="/js/admin.js"></script>
+</body>
+</html>

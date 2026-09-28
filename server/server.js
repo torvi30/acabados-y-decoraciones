@@ -50,6 +50,11 @@ app.get('/api/health', (req, res) => {
     });
 });
 
+// Ruta del Panel de Administración y Mini-CRM
+app.get('/admin', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/admin.html'));
+});
+
 // Manejador de rutas no encontradas (404)
 app.use((req, res, next) => {
     if (req.path.startsWith('/api')) {

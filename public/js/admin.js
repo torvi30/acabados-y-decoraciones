@@ -1,6 +1,6 @@
 /**
  * ==========================================================================
- * ADMIN DASHBOARD & MINI-CRM SCRIPT (Tailwind CSS + Firebase Firestore)
+ * ADMIN DASHBOARD & MINI-CRM SCRIPT (Responsive Móvil + Desktop)
  * Obra Blanca & Acabados Arquitectónicos
  * ==========================================================================
  */
@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Elementos DOM
     const crmTableBody = document.getElementById('crmTableBody');
+    const crmCardsMobile = document.getElementById('crmCardsMobile');
     const searchInput = document.getElementById('searchInput');
     const btnClearSearch = document.getElementById('btnClearSearch');
     const filterPills = document.querySelectorAll('.filter-tab-pill');
@@ -72,7 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
         toastNotice.classList.add('toast-show');
         setTimeout(() => {
             toastNotice.classList.remove('toast-show');
-        }, 3200);
+        }, 3000);
     }
 
     // Copiar al portapapeles
@@ -94,7 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             document.body.removeChild(textArea);
         }
-        showToast(`${label} copiado al portapapeles`, '📋');
+        showToast(`${label} copiado`, '📋');
     };
 
     // Helper para iniciales de Avatar
@@ -111,32 +112,47 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await fetch('/api/health');
             const data = await res.json();
             if (data.database && data.database.firebase_connected) {
-                engineBadgeText.textContent = '🔥 Firebase Firestore (En Vivo)';
+                if (engineBadgeText) engineBadgeText.textContent = '🔥 Firestore (En Vivo)';
             } else if (data.database && data.database.mysql_connected) {
-                engineBadgeText.textContent = '🐬 MySQL Conectado';
+                if (engineBadgeText) engineBadgeText.textContent = '🐬 MySQL Conectado';
             } else {
-                engineBadgeText.textContent = '💾 Base de Datos Local';
+                if (engineBadgeText) engineBadgeText.textContent = '💾 Base Local';
             }
         } catch (err) {
-            engineBadgeText.textContent = '⚠️ Sin conexión al servidor';
+            if (engineBadgeText) engineBadgeText.textContent = '⚠️ Sin conexión';
         }
     }
 
-    // 2. Carga Principal de Leads desde el Backend
+    // 2. Carga Principal de Leads
     async function loadLeads() {
-        crmTableBody.innerHTML = `
-            <tr>
-                <td colspan="7" class="py-12 text-center text-slate-400">
-                    <div class="inline-flex items-center gap-3">
-                        <svg class="animate-spin h-5 w-5 text-brand-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        <span>Cargando cotizaciones desde Firebase Firestore...</span>
-                    </div>
-                </td>
-            </tr>
+        const loadingHtml = `
+            <div class="py-12 text-center text-slate-400">
+                <div class="inline-flex items-center gap-2">
+                    <svg class="animate-spin h-5 w-5 text-brand-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span class="text-xs">Cargando prospectos...</span>
+                </div>
+            </div>
         `;
+
+        if (crmCardsMobile) crmCardsMobile.innerHTML = loadingHtml;
+        if (crmTableBody) {
+            crmTableBody.innerHTML = `
+                <tr>
+                    <td colspan="7" class="py-12 text-center text-slate-400">
+                        <div class="inline-flex items-center gap-3">
+                            <svg class="animate-spin h-5 w-5 text-brand-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span>Cargando cotizaciones desde Firebase Firestore...</span>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
 
         try {
             const res = await fetch('/api/leads');
@@ -151,18 +167,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 allLeads = [];
                 updateKPIs([]);
                 updateTabCounters([]);
-                renderEmptyTable();
+                renderEmpty();
             }
         } catch (error) {
             console.error('Error al cargar leads:', error);
-            crmTableBody.innerHTML = `
-                <tr>
-                    <td colspan="7" class="py-12 text-center text-rose-400">
-                        <p class="font-bold">Error de conexión al cargar datos de Firebase.</p>
-                        <span class="text-xs text-slate-500">Verifica que el servidor local esté activo.</span>
-                    </td>
-                </tr>
-            `;
+            if (crmCardsMobile) {
+                crmCardsMobile.innerHTML = `
+                    <div class="p-6 text-center text-rose-400 bg-dark-900 border border-slate-800 rounded-2xl">
+                        <p class="font-bold text-sm">Error de conexión al cargar datos.</p>
+                        <span class="text-xs text-slate-500">Verifica que el servidor esté activo.</span>
+                    </div>
+                `;
+            }
+            if (crmTableBody) {
+                crmTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="py-12 text-center text-rose-400 font-bold">
+                            Error de conexión al cargar datos de Firebase.
+                        </td>
+                    </tr>
+                `;
+            }
         }
     }
 
@@ -176,11 +201,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const convRate = total > 0 ? Math.round((ganados / total) * 100) : 0;
 
         if (kpiTotalLeads) kpiTotalLeads.textContent = total;
-        if (kpiNewLeads) kpiNewLeads.textContent = `${nuevos} nuevos sin contactar`;
+        if (kpiNewLeads) kpiNewLeads.textContent = `${nuevos} nuevos`;
         if (kpiTotalValue) kpiTotalValue.textContent = `$${totalCOP.toLocaleString('es-CO')} COP`;
         if (kpiTotalM2) kpiTotalM2.textContent = `${totalM2.toLocaleString('es-CO')} m²`;
         if (kpiWonLeads) kpiWonLeads.textContent = ganados;
-        if (kpiConversionRate) kpiConversionRate.textContent = `Tasa de cierre: ${convRate}%`;
+        if (kpiConversionRate) kpiConversionRate.textContent = `Cierre: ${convRate}%`;
     }
 
     // 4. Actualización de Contadores en las Pestañas
@@ -221,7 +246,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function filterAndRender() {
         let filtered = allLeads;
 
-        // Filtro por Estado seleccionado
+        // Filtro por Estado
         if (currentFilter !== 'all') {
             filtered = filtered.filter(l => l.estado_lead === currentFilter);
         }
@@ -241,33 +266,164 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (filteredCountBadge) {
-            filteredCountBadge.textContent = `Mostrando ${filtered.length} de ${allLeads.length} prospectos`;
+            filteredCountBadge.textContent = `${filtered.length} de ${allLeads.length} leads`;
         }
 
-        renderTable(filtered);
-    }
-
-    function renderEmptyTable() {
-        crmTableBody.innerHTML = `
-            <tr>
-                <td colspan="7" class="py-16 text-center text-slate-400">
-                    <div class="w-16 h-16 rounded-2xl bg-dark-950 border border-slate-800 flex items-center justify-center mx-auto text-2xl text-slate-500 mb-3 shadow-inner">
-                        📂
-                    </div>
-                    <strong class="text-white text-base block font-bold">No se encontraron cotizaciones</strong>
-                    <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-                        No hay registros que coincidan con los filtros o término de búsqueda. Intenta limpiar la búsqueda.
-                    </p>
-                </td>
-            </tr>
-        `;
-    }
-
-    function renderTable(leads) {
-        if (!leads || leads.length === 0) {
-            renderEmptyTable();
+        if (!filtered || filtered.length === 0) {
+            renderEmpty();
             return;
         }
+
+        renderMobileCards(filtered);
+        renderDesktopTable(filtered);
+    }
+
+    function renderEmpty() {
+        const emptyMsg = `
+            <div class="py-12 px-4 text-center text-slate-400 bg-dark-900 border border-slate-800 rounded-2xl">
+                <div class="w-14 h-14 rounded-2xl bg-dark-950 border border-slate-800 flex items-center justify-center mx-auto text-2xl text-slate-500 mb-2">
+                    📂
+                </div>
+                <strong class="text-white text-sm block font-bold">No hay cotizaciones para mostrar</strong>
+                <p class="text-xs text-slate-500 mt-1">Prueba seleccionando otro filtro o limpiando la búsqueda.</p>
+            </div>
+        `;
+        if (crmCardsMobile) crmCardsMobile.innerHTML = emptyMsg;
+        if (crmTableBody) {
+            crmTableBody.innerHTML = `
+                <tr>
+                    <td colspan="7" class="py-16 text-center text-slate-400">
+                        <strong class="text-white text-base block font-bold">No se encontraron cotizaciones</strong>
+                        <p class="text-xs text-slate-500 mt-1">No hay registros con los filtros seleccionados.</p>
+                    </td>
+                </tr>
+            `;
+        }
+    }
+
+    // 5A. Renderizado de Tarjetas Táctiles para Móviles (Fácil manejo con una mano)
+    function renderMobileCards(leads) {
+        if (!crmCardsMobile) return;
+
+        crmCardsMobile.innerHTML = leads.map(lead => {
+            const fecha = new Date(lead.created_at).toLocaleDateString('es-CO', {
+                day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit'
+            });
+            const presupuesto = lead.presupuesto_estimado 
+                ? `$${Number(lead.presupuesto_estimado).toLocaleString('es-CO')} COP` 
+                : 'A convenir';
+
+            const cleanPhone = (lead.telefono || '').replace(/\D/g, '');
+            const waMsg = `Hola ${encodeURIComponent(lead.nombre_completo)}, te escribo de Obra Blanca para revisar los acabados de tu proyecto en ${encodeURIComponent(lead.ciudad_zona || 'Medellín')}`;
+            const waLink = `https://wa.me/57${cleanPhone}?text=${waMsg}`;
+            const telLink = `tel:+57${cleanPhone}`;
+
+            const serviceName = (lead.tipo_servicio || 'obra_blanca_completa').replace(/_/g, ' ');
+            const initials = getInitials(lead.nombre_completo);
+            const hasNotes = lead.notas_seguimiento && lead.notas_seguimiento.trim().length > 0;
+
+            const optionsHtml = ESTADOS.map(est => `
+                <option value="${est.key}" ${lead.estado_lead === est.key ? 'selected' : ''}>
+                    ${est.label}
+                </option>
+            `).join('');
+
+            return `
+                <div class="bg-dark-900 border border-slate-800 rounded-2xl p-4 shadow-lg space-y-3">
+                    
+                    <!-- Fila Superior: Avatar + Nombre + Fecha -->
+                    <div class="flex items-start justify-between gap-2.5">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-800 to-dark-850 border border-slate-700 flex items-center justify-center font-display font-bold text-xs text-brand-400 shrink-0">
+                                ${initials}
+                            </div>
+                            <div>
+                                <h3 class="text-sm font-bold text-white leading-tight">${lead.nombre_completo}</h3>
+                                <span class="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5">
+                                    <svg class="w-3 h-3 text-rose-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
+                                    ${lead.ciudad_zona || 'Área Metropolitana'}
+                                </span>
+                            </div>
+                        </div>
+                        <span class="text-[10px] text-slate-500 font-medium shrink-0">${fecha}</span>
+                    </div>
+
+                    <!-- Fila de Estado del Embudo (Selector táctil a lo ancho) -->
+                    <div>
+                        <select class="w-full status-select st-${lead.estado_lead || 'nuevo'} py-2.5 px-3 text-xs font-bold rounded-xl" onchange="changeStatus('${lead.id}', this.value, this)">
+                            ${optionsHtml}
+                        </select>
+                    </div>
+
+                    <!-- Fila de Proyecto & Presupuesto -->
+                    <div class="bg-dark-950/80 border border-slate-800/80 rounded-xl p-3 flex items-center justify-between gap-2">
+                        <div>
+                            <span class="text-[11px] text-slate-300 font-semibold block capitalize truncate max-w-[170px]">${serviceName}</span>
+                            <span class="text-[10px] text-sky-400 font-bold">📐 ${lead.area_m2_estimada || 0} m² (${lead.tipo_inmueble || 'Apto'})</span>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-xs font-black text-brand-400 font-display block">${presupuesto}</span>
+                            <span class="text-[9px] uppercase tracking-wider text-slate-500 font-bold">Presupuesto</span>
+                        </div>
+                    </div>
+
+                    <!-- Fila de Botones de Acción Elegantes (Grandes y fáciles de tocar) -->
+                    <div class="grid grid-cols-3 gap-2 pt-1">
+                        <!-- WhatsApp -->
+                        <a href="${waLink}" target="_blank" 
+                           class="inline-flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl bg-emerald-500/15 hover:bg-emerald-500 text-emerald-400 hover:text-white border border-emerald-500/30 font-bold text-xs active:scale-95 transition-all shadow-sm">
+                            <svg class="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.299.144.35.49 1.199.533 1.287.043.088.072.19.014.305-.058.115-.087.187-.173.289l-.26.309c-.087.098-.179.204-.077.379.101.175.452.746.97 1.208.667.595 1.23.78 1.403.867.174.088.275.073.376-.044.101-.116.433-.506.549-.68.116-.174.231-.145.39-.087s1.011.477 1.184.564.289.13.332.203c.043.072.043.419-.101.824z" />
+                            </svg>
+                            <span>WhatsApp</span>
+                        </a>
+
+                        <!-- Llamar -->
+                        <a href="${telLink}" 
+                           class="inline-flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl bg-sky-500/15 hover:bg-sky-500 text-sky-400 hover:text-white border border-sky-500/30 font-bold text-xs active:scale-95 transition-all shadow-sm">
+                            <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                            </svg>
+                            <span>Llamar</span>
+                        </a>
+
+                        <!-- Bitácora -->
+                        <button type="button" onclick="openDetailModal('${lead.id}')" 
+                                class="inline-flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl bg-purple-500/15 hover:bg-purple-500 text-purple-400 hover:text-white border border-purple-500/30 font-bold text-xs active:scale-95 transition-all shadow-sm">
+                            <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                            <span>${hasNotes ? 'Notas •' : 'Ficha'}</span>
+                        </button>
+                    </div>
+
+                    <!-- Fila Inferior: Copiar Teléfono y Eliminar -->
+                    <div class="flex items-center justify-between pt-1 border-t border-slate-800/60 text-xs">
+                        <button type="button" onclick="copyToClipboard('${cleanPhone}', 'Teléfono')" class="text-[11px] font-mono text-slate-400 hover:text-brand-400 flex items-center gap-1.5 py-1 px-2 rounded-lg bg-dark-950 border border-slate-800">
+                            <span>📞 ${lead.telefono || 'Sin número'}</span>
+                            <svg class="w-3 h-3 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
+                        </button>
+
+                        <button type="button" onclick="deleteLead('${lead.id}', '${encodeURIComponent(lead.nombre_completo)}')" class="text-slate-500 hover:text-rose-400 p-1.5 rounded-lg hover:bg-rose-500/10 transition-colors" title="Eliminar cotización">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                        </button>
+                    </div>
+
+                </div>
+            `;
+        }).join('');
+    }
+
+    // 5B. Renderizado de la Tabla para Escritorio (Espaciosa y elegante)
+    function renderDesktopTable(leads) {
+        if (!crmTableBody) return;
 
         crmTableBody.innerHTML = leads.map(lead => {
             const fecha = new Date(lead.created_at).toLocaleDateString('es-CO', {
@@ -284,6 +440,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const serviceName = (lead.tipo_servicio || 'obra_blanca_completa').replace(/_/g, ' ');
             const initials = getInitials(lead.nombre_completo);
+            const hasNotes = lead.notas_seguimiento && lead.notas_seguimiento.trim().length > 0;
 
             const optionsHtml = ESTADOS.map(est => `
                 <option value="${est.key}" ${lead.estado_lead === est.key ? 'selected' : ''}>
@@ -291,15 +448,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 </option>
             `).join('');
 
-            const hasNotes = lead.notas_seguimiento && lead.notas_seguimiento.trim().length > 0;
-
             return `
                 <tr class="hover:bg-slate-800/30 transition-colors group">
                     
                     <!-- Cliente & Ubicación -->
                     <td class="py-4 px-5">
                         <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-800 to-dark-850 border border-slate-700/80 flex items-center justify-center font-display font-bold text-xs text-brand-400 shadow-sm shrink-0">
+                            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-800 to-dark-850 border border-slate-700 flex items-center justify-center font-display font-bold text-xs text-brand-400 shrink-0">
                                 ${initials}
                             </div>
                             <div>
@@ -317,12 +472,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                     </td>
 
-                    <!-- Contacto Rápido con Botones Elegantes -->
+                    <!-- Contacto Directo: Botones organizados y claros -->
                     <td class="py-4 px-4">
                         <div class="flex items-center gap-2">
                             <!-- Botón WhatsApp -->
-                            <a href="${waLink}" target="_blank" data-tooltip="WhatsApp Directo" 
-                               class="action-btn p-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500 text-emerald-400 hover:text-white border border-emerald-500/30 transition-all duration-200 shadow-sm">
+                            <a href="${waLink}" target="_blank" data-tooltip="Abrir WhatsApp" 
+                               class="action-btn p-2 rounded-xl bg-emerald-500/15 hover:bg-emerald-500 text-emerald-400 hover:text-white border border-emerald-500/30 transition-all duration-200 shadow-sm">
                                 <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                                     <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.006c.106.005.249-.04.39.299.144.35.49 1.199.533 1.287.043.088.072.19.014.305-.058.115-.087.187-.173.289l-.26.309c-.087.098-.179.204-.077.379.101.175.452.746.97 1.208.667.595 1.23.78 1.403.867.174.088.275.073.376-.044.101-.116.433-.506.549-.68.116-.174.231-.145.39-.087s1.011.477 1.184.564.289.13.332.203c.043.072.043.419-.101.824z" />
                                 </svg>
@@ -330,17 +485,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
                             <!-- Botón Teléfono -->
                             <a href="${telLink}" data-tooltip="Llamar" 
-                               class="action-btn p-2 rounded-xl bg-sky-500/10 hover:bg-sky-500 text-sky-400 hover:text-white border border-sky-500/30 transition-all duration-200 shadow-sm">
+                               class="action-btn p-2 rounded-xl bg-sky-500/15 hover:bg-sky-500 text-sky-400 hover:text-white border border-sky-500/30 transition-all duration-200 shadow-sm">
                                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                                 </svg>
                             </a>
 
                             <!-- Número con botón de copiar -->
-                            <button type="button" onclick="copyToClipboard('${cleanPhone}', 'Teléfono de ${lead.nombre_completo}')" data-tooltip="Copiar teléfono" 
-                                    class="text-xs font-mono text-slate-300 hover:text-brand-400 px-2 py-1 rounded-lg bg-dark-950 border border-slate-800 hover:border-slate-700 transition-all flex items-center gap-1.5">
+                            <button type="button" onclick="copyToClipboard('${cleanPhone}', 'Teléfono')" data-tooltip="Copiar teléfono" 
+                                    class="text-xs font-mono text-slate-300 hover:text-brand-400 px-2.5 py-1.5 rounded-xl bg-dark-950 border border-slate-800 hover:border-slate-700 transition-all flex items-center gap-1.5">
                                 <span>${lead.telefono || 'Sin número'}</span>
-                                <svg class="w-3 h-3 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <svg class="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                                 </svg>
                             </button>
@@ -350,7 +505,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <!-- Proyecto / Metraje -->
                     <td class="py-4 px-4">
                         <strong class="text-xs text-white capitalize block font-semibold">${serviceName}</strong>
-                        <div class="flex items-center gap-2 mt-1">
+                        <div class="flex items-center gap-1.5 mt-1">
                             <span class="inline-flex items-center gap-1 text-[11px] font-bold text-sky-400 bg-sky-500/10 px-2 py-0.5 rounded-md border border-sky-500/20">
                                 📐 ${lead.area_m2_estimada || 0} m²
                             </span>
@@ -368,7 +523,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <span class="text-[10px] text-slate-500 uppercase font-semibold">Valor Estimado</span>
                     </td>
 
-                    <!-- Estado del Embudo (Selector Dinámico) -->
+                    <!-- Estado del Embudo -->
                     <td class="py-4 px-4">
                         <select class="status-select st-${lead.estado_lead || 'nuevo'}" onchange="changeStatus('${lead.id}', this.value, this)">
                             ${optionsHtml}
@@ -386,21 +541,21 @@ document.addEventListener('DOMContentLoaded', () => {
                         </span>
                     </td>
 
-                    <!-- Gestión / Bitácora (Botones Elegantes) -->
+                    <!-- Gestión / Bitácora -->
                     <td class="py-4 px-5 text-right">
                         <div class="flex items-center justify-end gap-2">
                             <!-- Botón Ficha & Bitácora -->
                             <button type="button" onclick="openDetailModal('${lead.id}')" data-tooltip="Ficha & Bitácora" 
-                                    class="action-btn inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-purple-500/10 hover:bg-purple-500 text-purple-400 hover:text-white border border-purple-500/30 text-xs font-semibold transition-all">
+                                    class="action-btn inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-500/15 hover:bg-purple-500 text-purple-400 hover:text-white border border-purple-500/30 text-xs font-semibold transition-all">
                                 <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                 </svg>
                                 <span>${hasNotes ? 'Bitácora •' : 'Ficha'}</span>
                             </button>
 
-                            <!-- Botón Eliminar Cotización -->
+                            <!-- Botón Eliminar -->
                             <button type="button" onclick="deleteLead('${lead.id}', '${encodeURIComponent(lead.nombre_completo)}')" data-tooltip="Eliminar" 
-                                    class="action-btn p-1.5 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/30 transition-all">
+                                    class="action-btn p-2 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/30 transition-all">
                                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                 </svg>
@@ -424,15 +579,17 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await res.json();
 
             if (data.success) {
-                // Actualizar localmente
                 const item = allLeads.find(l => String(l.id) === String(id));
                 if (item) item.estado_lead = newStatus;
 
-                // Actualizar clase en el select
-                selectElement.className = `status-select st-${newStatus}`;
+                selectElement.className = selectElement.className.replace(/st-\w+/, `st-${newStatus}`);
                 updateKPIs(allLeads);
                 updateTabCounters(allLeads);
                 showToast(`Estado actualizado: ${newStatus.replace(/_/g, ' ')}`);
+                // Re-filtrar si hay un filtro activo que no sea 'all'
+                if (currentFilter !== 'all') {
+                    filterAndRender();
+                }
             } else {
                 showToast(`Error: ${data.error || 'No se pudo actualizar'}`, '⚠️', true);
             }
@@ -472,7 +629,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnCloseDetailModal) btnCloseDetailModal.addEventListener('click', closeDetailModal);
     if (btnCancelDetailModal) btnCancelDetailModal.addEventListener('click', closeDetailModal);
 
-    // Guardar Notas de Seguimiento en Firebase Firestore
+    // Guardar Notas de Seguimiento en Firebase
     if (btnSaveAdminNotes) {
         btnSaveAdminNotes.addEventListener('click', async () => {
             if (!selectedLeadForNotes) return;
@@ -505,7 +662,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             } catch (err) {
                 console.error(err);
-                showToast('Error de conexión al guardar bitácora', '⚠️', true);
+                showToast('Error al guardar bitácora', '⚠️', true);
             } finally {
                 btnSaveAdminNotes.disabled = false;
                 btnSaveAdminNotes.innerHTML = `
@@ -521,7 +678,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 8. Eliminar Cotización
     window.deleteLead = async function(id, clientNameEncoded) {
         const clientName = decodeURIComponent(clientNameEncoded);
-        const confirmDelete = confirm(`¿Estás seguro de que deseas eliminar la cotización de "${clientName}"? Esta acción borrará el registro de Firebase.`);
+        const confirmDelete = confirm(`¿Deseas eliminar la cotización de "${clientName}"? Se borrará de Firebase.`);
         if (!confirmDelete) return;
 
         try {
@@ -533,7 +690,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateKPIs(allLeads);
                 updateTabCounters(allLeads);
                 filterAndRender();
-                showToast(`Cotización de ${clientName} eliminada`, '🗑️');
+                showToast(`Cotización eliminada`, '🗑️');
             } else {
                 showToast(`Error: ${data.error}`, '⚠️', true);
             }
@@ -543,7 +700,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // 9. Registrar Nuevo Prospecto Manualmente
+    // 9. Registrar Nuevo Prospecto
     function openNewLeadModal() {
         newLeadForm.reset();
         newLeadModal.classList.add('modal-active');
@@ -591,7 +748,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await res.json();
 
                 if (data.success) {
-                    showToast('Prospecto guardado exitosamente en Firestore');
+                    showToast('Prospecto guardado en Firestore');
                     closeNewLeadModal();
                     await loadLeads();
                 } else {
@@ -599,29 +756,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             } catch (err) {
                 console.error(err);
-                showToast('Error de conexión al registrar', '⚠️', true);
+                showToast('Error de conexión', '⚠️', true);
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = `
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                     </svg>
-                    <span>Guardar en CRM</span>
+                    <span>Guardar Prospecto</span>
                 `;
             }
         });
     }
 
-    // 10. Filtrado Intuitivo por Estado (vía Píldoras o Tarjetas KPI)
+    // 10. Filtrado por Estado (Píldoras y KPIs)
     window.filterByState = function(stateKey) {
         currentFilter = stateKey;
         
         filterPills.forEach(btn => {
             const f = btn.getAttribute('data-filter');
             if (f === stateKey) {
-                btn.className = 'filter-tab-pill active flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all border shrink-0 bg-brand-500 text-dark-950 border-brand-400 shadow-md shadow-brand-500/20';
+                btn.className = 'filter-tab-pill active flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border shrink-0 bg-brand-500 text-dark-950 border-brand-400 shadow-md shadow-brand-500/20';
             } else {
-                btn.className = 'filter-tab-pill flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all border shrink-0 bg-dark-950 text-slate-400 border-slate-800 hover:border-slate-700 hover:text-slate-200';
+                btn.className = 'filter-tab-pill flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border shrink-0 bg-dark-950 text-slate-400 border-slate-800 hover:border-slate-700 hover:text-slate-200';
             }
         });
 
@@ -660,21 +817,21 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 12. Pestañas del Navbar (Dashboard / Leads / Pipeline)
+    // 12. Pestañas del Navbar
     const navTabBtns = document.querySelectorAll('.nav-tab-btn');
     navTabBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             navTabBtns.forEach(b => {
                 b.className = 'nav-tab-btn px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 transition-all flex items-center gap-2';
             });
-            btn.className = 'nav-tab-btn active px-3.5 py-1.5 rounded-xl text-xs font-semibold text-white bg-slate-800 border border-slate-700/80 transition-all shadow-sm flex items-center gap-2';
+            btn.className = 'nav-tab-btn active px-3.5 py-1.5 rounded-xl text-xs font-semibold text-white bg-slate-800 border border-slate-700/80 transition-all flex items-center gap-2';
             
             const nav = btn.getAttribute('data-nav');
             if (nav === 'dashboard' || nav === 'leads') {
                 filterByState('all');
             } else if (nav === 'kanban') {
                 filterByState('nuevo');
-                showToast('Mostrando prospectos nuevos pendientes');
+                showToast('Filtrando prospectos nuevos');
             }
         });
     });
@@ -687,13 +844,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Cierre de modales al hacer clic en el backdrop
+    // Cierre de modales
     window.addEventListener('click', (e) => {
         if (e.target === detailModal) closeDetailModal();
         if (e.target === newLeadModal) closeNewLeadModal();
     });
 
-    // Cierre con tecla Escape
     window.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             closeDetailModal();

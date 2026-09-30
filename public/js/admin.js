@@ -60,14 +60,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const toastMessage = document.getElementById('toastMessage');
     const toastIconContainer = document.getElementById('toastIconContainer');
 
-    // Mapeo de Estados
+    // Mapeo de Estados con sus clases de color para puntos e indicadores
     const ESTADOS = [
-        { key: 'nuevo', label: 'Nuevo Lead' },
-        { key: 'contactado', label: 'Contactado' },
-        { key: 'visita_tecnica_agendada', label: 'Visita Agendada' },
-        { key: 'cotizacion_enviada', label: 'Cotización Enviada' },
-        { key: 'ganado_en_obra', label: 'Ganado en Obra' },
-        { key: 'perdido', label: 'Perdido' }
+        { key: 'nuevo', label: 'Nuevo Lead', dotClass: 'bg-amber-400' },
+        { key: 'contactado', label: 'Contactado', dotClass: 'bg-sky-400' },
+        { key: 'visita_tecnica_agendada', label: 'Visita Agendada', dotClass: 'bg-purple-400' },
+        { key: 'cotizacion_enviada', label: 'Cotización Enviada', dotClass: 'bg-indigo-400' },
+        { key: 'ganado_en_obra', label: 'Ganado en Obra', dotClass: 'bg-emerald-400' },
+        { key: 'perdido', label: 'Perdido', dotClass: 'bg-rose-400' }
     ];
 
     // Helpers para Modales (100% Tailwind CSS nativo sin CSS adicional)
@@ -180,12 +180,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await fetch('/api/health');
             const data = await res.json();
             if (data.database && data.database.firebase_connected) {
-                if (engineBadgeText) engineBadgeText.textContent = '🔥 Firebase Firestore';
+                if (engineBadgeText) engineBadgeText.textContent = 'En línea';
             } else {
-                if (engineBadgeText) engineBadgeText.textContent = '💾 Memoria Temporal';
+                if (engineBadgeText) engineBadgeText.textContent = 'Memoria Local';
             }
         } catch (err) {
-            if (engineBadgeText) engineBadgeText.textContent = '⚠️ Sin conexión';
+            if (engineBadgeText) engineBadgeText.textContent = 'Sin conexión';
         }
     }
 
@@ -440,9 +440,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     <!-- Fila de Estado del Embudo (Selector táctil a lo ancho) -->
                     <div>
-                        <select class="w-full bg-dark-950 py-2 px-3 text-xs font-bold rounded-xl border focus:outline-none focus:ring-1 focus:ring-brand-500 cursor-pointer ${getStatusTailwindClass(lead.estado_lead || 'nuevo')}" onchange="changeStatus('${lead.id}', this.value, this)">
-                            ${optionsHtml}
-                        </select>
+                        ${renderStatusPillButton(lead.id, lead.estado_lead || 'nuevo', true)}
                     </div>
 
                     <!-- Fila de Proyecto & Presupuesto -->
@@ -625,11 +623,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         <span class="text-[10px] text-slate-500 uppercase font-semibold">Valor Estimado</span>
                     </td>
 
-                    <!-- Estado del Embudo -->
+                    <!-- Estado del Embudo (Selector Estilizado con Popover de Lujo) -->
                     <td class="py-4 px-4">
-                        <select class="bg-dark-950 py-1.5 px-3 text-xs font-bold rounded-xl border focus:outline-none focus:ring-1 focus:ring-brand-500 cursor-pointer ${getStatusTailwindClass(lead.estado_lead || 'nuevo')}" onchange="changeStatus('${lead.id}', this.value, this)">
-                            ${optionsHtml}
-                        </select>
+                        ${renderStatusPillButton(lead.id, lead.estado_lead || 'nuevo', false)}
                     </td>
 
                     <!-- Fecha & Origen -->
@@ -898,12 +894,125 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // 6. Cambio de Estado en Vivo (Dropdowns de Lista / Tabla)
-    window.changeStatus = async function(id, newStatus, selectElement) {
-        if (selectElement) {
-            ALL_STATUS_CLASSES.forEach(cls => selectElement.classList.remove(cls));
-            getStatusTailwindClass(newStatus).split(' ').forEach(cls => selectElement.classList.add(cls));
+    // 6. Componente de Selector de Estado con Popover Flotante de Lujo
+    function renderStatusPillButton(leadId, currentStatus, isFullWidth = false) {
+        const safeStatus = currentStatus || 'nuevo';
+        const statusObj = ESTADOS.find(e => e.key === safeStatus) || ESTADOS[0];
+        const widthCls = isFullWidth ? 'w-full' : '';
+
+        return `
+            <button type="button" 
+                    onclick="openStatusPopover('${leadId}', event)" 
+                    class="${widthCls} inline-flex items-center justify-between gap-2 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all active:scale-95 shadow-sm hover:brightness-110 cursor-pointer ${getStatusTailwindClass(safeStatus)}"
+                    title="Clic para cambiar estado comercial">
+                <span class="flex items-center gap-1.5 truncate">
+                    <span class="w-1.5 h-1.5 rounded-full ${statusObj.dotClass || 'bg-amber-400'} shrink-0"></span>
+                    <span class="truncate">${statusObj.label}</span>
+                </span>
+                <svg class="w-3.5 h-3.5 opacity-70 shrink-0 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7" />
+                </svg>
+            </button>
+        `;
+    }
+
+    const statusPopover = document.getElementById('statusDropdownPopover');
+    const statusOptionsContainer = document.getElementById('statusDropdownOptions');
+    let activePopoverLeadId = null;
+
+    window.openStatusPopover = function(leadId, event) {
+        if (event) {
+            event.stopPropagation();
+            event.preventDefault();
         }
+
+        const lead = allLeads.find(l => String(l.id) === String(leadId));
+        if (!lead || !statusPopover || !statusOptionsContainer) return;
+
+        // Si ya está abierto para el mismo lead, cerrarlo
+        if (activePopoverLeadId === leadId && !statusPopover.classList.contains('hidden')) {
+            closeStatusPopover();
+            return;
+        }
+
+        activePopoverLeadId = leadId;
+        const currentStatus = lead.estado_lead || 'nuevo';
+
+        // Generar lista de opciones elegantes
+        statusOptionsContainer.innerHTML = ESTADOS.map(est => {
+            const isSelected = est.key === currentStatus;
+            return `
+                <button type="button" 
+                        onclick="selectStatusOption('${leadId}', '${est.key}', event)"
+                        class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
+                            isSelected 
+                                ? 'bg-slate-800 text-white font-bold border border-slate-700/80 shadow-sm' 
+                                : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                        }">
+                    <span class="flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full ${est.dotClass}"></span>
+                        <span>${est.label}</span>
+                    </span>
+                    ${isSelected ? `
+                        <svg class="w-4 h-4 text-brand-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+                        </svg>
+                    ` : ''}
+                </button>
+            `;
+        }).join('');
+
+        // Mostrar popover para calcular posición
+        statusPopover.classList.remove('hidden');
+
+        const triggerBtn = event.currentTarget || event.target;
+        const rect = triggerBtn.getBoundingClientRect();
+        const popoverHeight = statusPopover.offsetHeight || 250;
+        const popoverWidth = Math.max(rect.width, 195);
+        statusPopover.style.minWidth = `${popoverWidth}px`;
+
+        const spaceBelow = window.innerHeight - rect.bottom;
+        if (spaceBelow < popoverHeight && rect.top > popoverHeight) {
+            // Abrir hacia arriba si queda poco espacio abajo
+            statusPopover.style.top = `${rect.top - popoverHeight - 6}px`;
+        } else {
+            // Abrir hacia abajo
+            statusPopover.style.top = `${rect.bottom + 6}px`;
+        }
+
+        // Evitar desbordamiento en el borde derecho de la pantalla
+        const leftPos = Math.max(12, Math.min(rect.left, window.innerWidth - popoverWidth - 16));
+        statusPopover.style.left = `${leftPos}px`;
+    };
+
+    window.closeStatusPopover = function() {
+        if (statusPopover) {
+            statusPopover.classList.add('hidden');
+        }
+        activePopoverLeadId = null;
+    };
+
+    window.selectStatusOption = async function(leadId, newStatus, event) {
+        if (event) {
+            event.stopPropagation();
+            event.preventDefault();
+        }
+        closeStatusPopover();
+        await moveLeadStage(leadId, newStatus);
+    };
+
+    // Cerrar popover automáticamente al hacer clic fuera
+    document.addEventListener('click', (e) => {
+        if (statusPopover && !statusPopover.contains(e.target) && !e.target.closest('[onclick*="openStatusPopover"]')) {
+            closeStatusPopover();
+        }
+    });
+
+    window.addEventListener('resize', closeStatusPopover);
+    window.addEventListener('scroll', closeStatusPopover, true);
+
+    // Compatibilidad retroactiva
+    window.changeStatus = async function(id, newStatus) {
         await moveLeadStage(id, newStatus);
     };
 

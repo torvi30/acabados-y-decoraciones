@@ -967,9 +967,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const triggerBtn = event.currentTarget || event.target;
         const rect = triggerBtn.getBoundingClientRect();
+        const maxAvailableWidth = window.innerWidth - 24;
         const popoverHeight = statusPopover.offsetHeight || 250;
-        const popoverWidth = Math.max(rect.width, 195);
-        statusPopover.style.minWidth = `${popoverWidth}px`;
+        const popoverWidth = Math.min(Math.max(rect.width, 195), maxAvailableWidth);
+        
+        statusPopover.style.minWidth = `${Math.min(195, maxAvailableWidth)}px`;
+        statusPopover.style.maxWidth = `${maxAvailableWidth}px`;
 
         const spaceBelow = window.innerHeight - rect.bottom;
         if (spaceBelow < popoverHeight && rect.top > popoverHeight) {
@@ -980,8 +983,8 @@ document.addEventListener('DOMContentLoaded', () => {
             statusPopover.style.top = `${rect.bottom + 6}px`;
         }
 
-        // Evitar desbordamiento en el borde derecho de la pantalla
-        const leftPos = Math.max(12, Math.min(rect.left, window.innerWidth - popoverWidth - 16));
+        // Evitar desbordamiento en el borde derecho o izquierdo de la pantalla
+        const leftPos = Math.max(12, Math.min(rect.left, window.innerWidth - popoverWidth - 12));
         statusPopover.style.left = `${leftPos}px`;
     };
 
